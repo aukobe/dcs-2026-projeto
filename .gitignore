@@ -1,0 +1,12 @@
+# Segredos
+.env
+
+# Ambiente Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Dados locais (nunca versionar)
+backup_raw/
+dados_locais/
