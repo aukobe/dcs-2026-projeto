@@ -32,7 +32,7 @@ Tudo nesta seção está **a confirmar no plan.md**.
 - Escreva somente em prefixos com `group_id=24269`: `tcg/raw/*/group_id=24269/`, `tcg/silver/*/group_id=24269/`, `tcg/gold/group_id=24269/`, `tcg/gold_turma/carteira/group_id=24269/`.
 - Nenhum objeto em `tcg/raw/` é sobrescrito ou apagado; antes de gravar, confira se a chave já existe e, se existir, aborte com erro.
 - A camada raw guarda a resposta original da fonte, byte a byte, sem transformação.
-- Silver e gold são derivadas exclusivamente da raw; podem ser reconstruídas, mas só dentro dos prefixos acima.
+- A silver é derivada exclusivamente da raw da DRI; a gold é derivada da silver da DRI e das silvers de outras coleções disponíveis, lidas somente para leitura. Ambas podem ser reconstruídas, mas só dentro dos prefixos acima.
 - TCGCSV: toda requisição envia o User-Agent próprio definido em `TCG_USER_AGENT`; pausa mínima de 100 ms entre chamadas; no máximo uma coleta por dia, sempre depois das 20h UTC.
 - Dia sem coleta é registrado na tabela "Dias sem coleta" do README.md, com data e motivo; não se inventam nem se copiam dados para preencher lacunas.
 
