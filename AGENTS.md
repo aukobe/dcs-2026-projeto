@@ -10,7 +10,8 @@ Regras para qualquer agente de IA (ou pessoa) que trabalhe neste repositório. I
   - TCGCSV: `https://tcgcsv.com/tcgplayer/3/24269/products` e `https://tcgcsv.com/tcgplayer/3/24269/prices`.
   - Banco Central do Brasil: PTAX (câmbio USD/BRL) e CDI.
 - Entregas: camada raw (resposta original), silver, gold e um dashboard em Python.
-- Fora do escopo: outras coleções ou groupIds, escrita em prefixos de outros alunos, qualquer dado que não venha das fontes acima.
+- Fora do escopo: coletar ou gravar dados de outras coleções ou groupIds, escrita em prefixos de outros alunos, qualquer dado coletado que não venha das fontes acima.
+- Dentro do escopo, somente leitura: ler dados de outras coleções produzidos por terceiros, quando estiverem disponíveis. Esses dados não são coletados nem gravados por este projeto, e a ausência deles não é falha do pipeline.
 
 ## Ambiente
 
