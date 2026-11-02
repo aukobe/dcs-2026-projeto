@@ -6,6 +6,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 |------|-------|--------|----------------------|
 | 2026-11-02 | 0 – Esqueleto | texto completo em [Prompt da etapa 0 – Esqueleto](#prompt-da-etapa-0--esqueleto) | aprovado sem alterações |
 | 2026-11-02 | 1 – Persona | texto completo em [Prompt da etapa 1 – Persona](#prompt-da-etapa-1--persona) | aprovado com ajustes (nome da persona, pergunta 3 sem turma, coleção = DRI inteira, lacunas revisadas, escopo de leitura de outras coleções) |
+| 2026-11-02 | 2 – Objetivos | texto completo em [Prompt da etapa 2 – Objetivos](#prompt-da-etapa-2--objetivos) | aprovado com ajustes (OBJ-02 com decomposição em três efeitos, OBJ-05 com cinco carteiras e fórmula de liquidação, P4 das outras coleções no OBJ-04, coleções recentes = lançadas a partir de 2024, câmbio da carteira dolar como limite declarado, encaminhamento das perguntas abertas) |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -152,4 +153,97 @@ Arquivo alterado: `docs/00_persona.md`.
 
 ```text
 Na lacuna sobre a origem dos dados das outras coleções, troque "(perguntas 3 e 4)" por "(perguntas 3, 4 e 5)". Não altere mais nada.
+```
+
+## Prompt da etapa 2 – Objetivos
+
+```text
+[C] Personagem
+Você é um product owner técnico de uma equipe de dados. Você traduz a dor da persona em objetivos de negócio mensuráveis, drivers e restrições. Você não escreve requisitos técnicos, não escolhe bibliotecas e não escreve código.
+
+[R] Pedido
+Preencha docs/01_objetivos_negocio.md a partir de docs/00_persona.md. Escreva exatamente estes seis objetivos, cada um com descrição, métrica de sucesso verificável e origem:
+OBJ-01 série diária contínua de preços da coleção DRI, sem nenhum dia inventado;
+OBJ-02 valores em reais com o efeito da carta separado do efeito do câmbio;
+OBJ-03 responder às perguntas 1, 2 e 4 da persona para a coleção DRI;
+OBJ-04 comparar a DRI com outras coleções recentes (perguntas 3 e 5) quando os dados delas estiverem disponíveis;
+OBJ-05 comparar uma carteira hipotética de R$ 1.000 em cartas avulsas e em selados com deixar o dinheiro em dólar ou no CDI;
+OBJ-06 projeto reprodutível e auditável a partir de um clone limpo do repositório, sem custo e sem segredo versionado.
+Liste também: drivers de negócio (DRV-xx), restrições (RES-xx, com tipo e origem) e o que fica fora do escopo.
+
+[E] Exemplos
+| OBJ-01 | Série diária contínua de preços da coleção DRI, sem nenhum dia inventado. | Toda data entre o primeiro e o último dia de coleta tem os arquivos brutos do dia ou aparece na tabela "Dias sem coleta" do README, com o motivo; zero dias preenchidos por estimativa. | Persona: "não tem histórico de preço próprio" |
+| DRV-01 | Um dia sem coleta não se recupera depois, porque a fonte só devolve o preço do dia. | Contexto do projeto |
+| RES-02 | Custo zero: nenhum serviço pago | financeira | Decisão do autor |
+
+[A] Ajustes
+- Cada objetivo precisa de uma métrica verificável por um comando, um teste ou uma observação concreta. Se o valor não estiver nos fatos de Extras, escreva "hipótese: validação pendente" e diga como medir.
+- Para OBJ-04, a métrica deve aceitar o resultado parcial: quando os dados de outras coleções não existirem, o painel informa a ausência em vez de mostrar dado vazio ou inventado.
+- Restrições têm tipo (técnica, financeira, legal, prazo) e origem.
+- Fora do escopo, inclua pelo menos: previsão de preço e recomendação de compra; coleta ou gravação de outras coleções; streaming em tempo real; preço de carta graduada (PSA, CGC); scraping de sites que bloqueiam acesso automatizado.
+- Não altere docs/00_persona.md.
+- Não escolha tecnologia além das que estão nas restrições.
+
+[T] Tipo de saída
+Somente docs/01_objetivos_negocio.md, em Markdown, com tabelas para objetivos, drivers, restrições e fora do escopo. Mostre o plano antes de editar e espere minha confirmação.
+
+[E] Extras
+Leia antes: AGENTS.md e docs/00_persona.md.
+Fatos e restrições (origem: contexto do projeto, salvo indicação):
+- Fonte de preços: TCGCSV, sem chave; pede User-Agent próprio, pausa mínima de 100 ms entre chamadas e no máximo 10.000 requisições por dia; atualiza por volta das 20h UTC; o preço muda uma vez por dia.
+- Câmbio: PTAX de fechamento do Banco Central, só em dia útil; no fim de semana e em feriado vale a última PTAX de dia útil anterior, nunca uma posterior.
+- CDI: série diária do Banco Central, só em dia útil.
+- Filtros de relevância: na pergunta 1, só cartas acima de US$ 1 no primeiro dia; na pergunta 5, só cartas acima de US$ 5; cartas de código digital (raridade Code Card) ficam fora das perguntas 1, 3 e 4.
+- Carteira: valor de liquidação diário, unidades inteiras, taxa de venda como parâmetro com 15% como hipótese declarada.
+- Repositório público no GitHub; credenciais só no .env e em secrets.
+- Execução: GitHub Codespaces com MinIO local; coleta diária agendada no GitHub Actions (decisão do autor; detalhes no plan.md).
+- Custo zero (decisão do autor).
+- Prazo de entrega: 12/12/2026, 23h59.
+- O período observado é de algumas semanas e não sustenta previsão.
+Se faltar informação, pergunte. Ao terminar, liste perguntas abertas e pare.
+```
+
+### Ajustes da revisão
+
+#### Ajuste 1 – aprovação do plano com ajustes
+
+Arquivo alterado: `docs/01_objetivos_negocio.md` (criado).
+
+```text
+Plano aprovado com estes ajustes:
+
+OBJ-02: a variação em reais se decompõe em três partes, não duas: efeito da carta, efeito do câmbio e efeito cruzado, pela identidade (1 + r_brl) = (1 + r_usd) × (1 + r_cambio). A métrica deve dizer que um teste confere essa identidade, com tolerância de arredondamento.
+
+OBJ-05: são cinco carteiras, todas partindo de R$ 1.000 no primeiro dia de coleta:
+- selado: unidades inteiras do booster box da coleção; se ele não tiver preço no primeiro dia, o selado de maior preço que tiver preço (escolha registrada em ADR);
+- cesta_raras: R$ 100 em cada uma das dez cartas de maior market price no primeiro dia, em unidades inteiras;
+- propria: regra definida pelo autor, registrada em ADR antes do primeiro cálculo;
+- dolar: R$ 1.000 convertidos pela PTAX de venda do primeiro dia e guardados em dólar;
+- cdi: R$ 1.000 corrigidos pelo CDI de cada dia útil, com juros compostos.
+A métrica deve incluir: valor de liquidação diário = unidades × market price × (1 − taxa de venda) × PTAX de compra, mais a sobra em caixa, que rende CDI; a composição usa só dados do primeiro dia, e um teste confirma que acrescentar dias posteriores não muda a composição.
+
+Respostas às perguntas abertas:
+1. Respondida acima.
+2. Sim: dólar comprado pela PTAX de venda e vendido pela PTAX de compra, sem spread nem IOF. Registre como limite declarado.
+3. Sim, inclua a P4 das outras coleções no OBJ-04.
+4. Coleções recentes = coleções principais do Pokémon TCG lançadas a partir de 2024.
+
+Pode escrever o arquivo.
+```
+
+#### Ajuste 2 – encaminhamento das perguntas abertas e registro da etapa
+
+Arquivos alterados: `docs/01_objetivos_negocio.md` e `docs/prompts.md`.
+
+```text
+RES-03 pode ficar como "legal".
+
+Na seção de perguntas abertas, registre o encaminhamento de cada uma:
+1. cesta_raras: sim, excluem Code Card e selados (só cartas avulsas). O critério de desempate fica para o spec.md.
+2. Sim: se o primeiro dia cair em fim de semana ou feriado, vale a PTAX de dia útil anterior, pela mesma regra do OBJ-02.
+3. Fica para o plan.md.
+4. Fica como hipótese até a primeira coleta.
+5. Continua pendente, a validar na primeira coleta.
+
+Depois registre em docs/prompts.md a etapa "2 – Objetivos", com o prompt original e, na subseção "Ajustes da revisão", as minhas mensagens de ajuste desta etapa (a de aprovação do plano e esta), anotando qual arquivo cada uma mudou. Não altere outros arquivos.
 ```
