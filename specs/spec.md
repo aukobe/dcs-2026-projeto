@@ -302,7 +302,8 @@ O painel lê `gold_turma/carteira/` de todas as coleções disponíveis, somente
 - Critério de aceite:
   - Dado o pipeline completo (coleta, sincronização, silver, gold) contra um MinIO de teste
   - Quando ele for executado
-  - Então nenhuma chave fora dos prefixos com `group_id=24269` é criada ou alterada, nenhum objeto do bruto muda de hash e o código não tem chamadas de exclusão
+  - Então nenhuma chave fora dos prefixos com `group_id=24269` é criada ou alterada e nenhum objeto do bruto muda de hash
+  - E a única exclusão do código fica numa função que só aceita os prefixos `silver/*/group_id=24269/`, `gold/group_id=24269/` e `gold_turma/carteira/group_id=24269/` e recusa qualquer chave em `raw/` ou de outro group_id; um teste confirma a recusa
 
 ### RNF-04: idempotência
 - Atributo: confiabilidade

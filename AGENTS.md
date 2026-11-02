@@ -46,6 +46,7 @@ Permitidos:
 Proibidos:
 - Ler, abrir ou imprimir o `.env` (`cat .env`, `source .env` seguido de `echo`, `printenv` de credenciais etc.).
 - Qualquer comando de exclusão no MinIO: `mc rm`, `mc rb`, `remove_object`, `remove_bucket` ou equivalentes.
+- Única exceção: `make reprocessar`, executado pelo autor, apaga objetos só em `tcg/silver/*/group_id=24269/`, `tcg/gold/group_id=24269/` e `tcg/gold_turma/carteira/group_id=24269/`; o agente continua proibido de executar qualquer exclusão, inclusive esse comando.
 - `git push --force` (e variantes como `--force-with-lease`).
 - `git commit` e `git push` pelo agente: o agente apenas propõe a mensagem de commit; quem commita é o autor.
 - Acessar a rede ou o MinIO fora de uma tarefa de `specs/tasks.md` que peça isso explicitamente.
@@ -84,4 +85,5 @@ Regras:
   - `T-xx`: identificador da tarefa em `specs/tasks.md`.
   - `[RF-yy]`: requisito funcional de `specs/spec.md` atendido (omitir quando não houver).
 - Descrição curta, no imperativo ou nominal, em português do Brasil.
+- Exceção: os commits automáticos do coletor, feitos só na branch dados-raw, usam o formato `dados(coleta): AAAA-MM-DD [RF-01]`; a convenção `tipo(T-xx): descrição [RF-yy]` vale para todos os commits na main.
 - Mensagem desta etapa: `chore(T-00): esqueleto SDD do projeto final`.
