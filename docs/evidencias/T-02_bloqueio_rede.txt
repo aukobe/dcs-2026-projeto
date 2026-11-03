@@ -1,0 +1,38 @@
+# T-02 – bloqueio de rede nos testes de unidade por fixture em tests/conftest.py (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_bloqueio_rede.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 4 items
+
+tests/unidade/test_bloqueio_rede.py::test_socket_direto_falha PASSED     [ 25%]
+tests/unidade/test_bloqueio_rede.py::test_create_connection_falha PASSED [ 50%]
+tests/unidade/test_bloqueio_rede.py::test_requests_falha PASSED          [ 75%]
+tests/unidade/test_bloqueio_rede.py::test_resolucao_dns_falha PASSED     [100%]
+
+============================== 4 passed in 0.12s ===============================
+código de saída: 0
+$ make test
+.venv/bin/python -m pytest -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.16.0
+collecting ... collected 7 items
+
+tests/unidade/test_bloqueio_rede.py::test_socket_direto_falha PASSED     [ 14%]
+tests/unidade/test_bloqueio_rede.py::test_create_connection_falha PASSED [ 28%]
+tests/unidade/test_bloqueio_rede.py::test_requests_falha PASSED          [ 42%]
+tests/unidade/test_bloqueio_rede.py::test_resolucao_dns_falha PASSED     [ 57%]
+tests/unidade/test_pacote.py::test_importa_pacote PASSED                 [ 71%]
+tests/unidade/test_pacote.py::test_versao_igual_metadados PASSED         [ 85%]
+tests/unidade/test_pacote.py::test_python_313 PASSED                     [100%]
+
+============================== 7 passed in 0.12s ===============================
+código de saída: 0
