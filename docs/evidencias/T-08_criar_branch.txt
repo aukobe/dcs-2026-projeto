@@ -1,0 +1,22 @@
+# T-08 – scripts/criar_branch_dados_raw.sh (branch órfã dados-raw, sem push) (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_criar_branch.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 7 items
+
+tests/unidade/test_criar_branch.py::test_branch_tem_so_os_dois_arquivos PASSED [ 14%]
+tests/unidade/test_criar_branch.py::test_gitattributes_desliga_conversao PASSED [ 28%]
+tests/unidade/test_criar_branch.py::test_branch_orfa_sem_historico_da_main PASSED [ 42%]
+tests/unidade/test_criar_branch.py::test_script_nao_faz_push PASSED      [ 57%]
+tests/unidade/test_criar_branch.py::test_main_e_arvore_de_trabalho_intactas PASSED [ 71%]
+tests/unidade/test_criar_branch.py::test_recusa_se_branch_ja_existe PASSED [ 85%]
+tests/unidade/test_criar_branch.py::test_recusa_se_origin_dados_raw_existe PASSED [100%]
+
+============================== 7 passed in 0.47s ===============================
+
+$ .venv/bin/python -m pytest -q
+62 passed in 0.62s
