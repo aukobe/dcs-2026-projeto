@@ -32,7 +32,7 @@ Documento derivado de `specs/spec.md` e `specs/plan.md`. Cada tarefa cabe num ú
 
 | ID | Tarefa | Requisitos | Verificação (comando) | Evidência esperada | Depende de | Executor | Status |
 |---|---|---|---|---|---|---|---|
-| T-14 | ADR-002: imagem do MinIO com tag fixada (`docs/adr/ADR-002-imagem-minio.md`) | RNF-09, RNF-10 | `git log --oneline -- docs/adr/ADR-002-imagem-minio.md` | ADR revisado e commitado pelo autor antes do T-15 | — | agente | [ ] |
+| T-14 | ADR-002: imagem do MinIO com tag fixada (`docs/adr/ADR-002-imagem-minio.md`) | RNF-09, RNF-10 | `git log --oneline -- docs/adr/ADR-002-imagem-minio.md` | ADR revisado e commitado pelo autor antes do T-15 | — | agente | [x] |
 | T-15 | `docker-compose.yml` do MinIO (`ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z`, portas 9000 e 9001, volume nomeado, healthcheck, credenciais do `.env`) e alvo `make up`; confirmar que o healthcheck funciona nessa imagem | RNF-09, RNF-10 | `pytest tests/unidade/test_compose.py && docker compose config --quiet` | o teste confirma a tag fixada (sem `latest`), o healthcheck, o volume nomeado e as credenciais vindas de variáveis | T-14 | agente | [ ] |
 | T-16 | Preencher o `.env` a partir do `.env.example` e subir o MinIO local **[contêiner]** | RNF-08, RNF-10 | `make up && docker compose ps` | o serviço MinIO aparece como `healthy`; `git status` não mostra o `.env` | T-15 | autor | [ ] |
 | T-17 | Leitor da branch (`src/tcg/sync/leitor_branch.py`): `git fetch` e leitura dos arquivos de `raw/` pelos blobs (`git ls-tree` e `git cat-file`), sem checkout | RF-05 | `pytest tests/unidade/test_leitor_branch.py` | num repositório temporário, lista as chaves de `raw/` e devolve bytes idênticos aos gravados, inclusive com `\r\n` | T-02 | agente | [ ] |

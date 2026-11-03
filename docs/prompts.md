@@ -23,6 +23,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-03 | T-11 | executor: autor (tarefa manual, sem prompt) | o autor criou a variável de repositório `TCG_USER_AGENT` (em `vars`, não em secret) no GitHub, em Settings > Secrets and variables > Actions > Variables; evidência em `docs/evidencias/T-11_variavel_user_agent.txt` |
 | 2026-11-03 | T-12 | executor: autor (tarefa manual, sem prompt) | o autor disparou o workflow `coleta.yml` manualmente depois das 20h UTC (execução coleta #1, sucesso em 56 s); `git ls-tree -r --name-only origin/dados-raw` lista os quatro arquivos do dia em `raw/.../data=2026-11-03/` (`cdi.json`, `cotacao.json`, `prices.json`, `products.json`) e `git log` mostra o commit `65c413a dados(coleta): 2026-11-03 [RF-01]`; pendência futura: atualizar `actions/checkout` para v5 e `actions/setup-python` para v6 em `.github/workflows/coleta.yml`, por causa do aviso de Node.js 20 descontinuado no GitHub Actions; evidência em `docs/evidencias/T-12_primeira_coleta.txt` |
 | 2026-11-03 | T-13 | "prompt de implementação padrão" | plano aprovado com script `scripts/hipoteses_bruto.py` e teste `tests/unidade/test_hipoteses_bruto.py` (6 passed; suíte: 79 passed); bruto de 2026-11-03 lido por `git show`, sem requisição às fontes; confirmadas: `tipo_produto` (25 selados, 256 cartas, 12 Code Cards sem número), raridades, imagem e link (281/281), preço dos selados (25/25); refutada: booster box (a regra pega também `Destined Rivals Half Booster Box`); janela PTAX/CDI consistente (6 Fechamentos, 5 dias de CDI) e repetição não validável; correções da spec propostas com diff, não aplicadas; evidência em `docs/evidencias/T-13_hipoteses.md`; depois, o autor pediu: "Aceito o diff proposto para o RF-23 (excluir também "Half"). Aplique no specs/spec.md, mostre o diff final e acrescente na evidência T-13_hipoteses.md que a correção foi aplicada. Registre esta mensagem na linha da T-13 em docs/prompts.md. Não altere outros arquivos."; correção do RF-23 aplicada em `specs/spec.md` e registrada na evidência; por fim, o autor pediu: "Aplique também a correção 2: na spec, retire a marca de hipótese de tipo_produto, lista de raridades, identificação do booster box, imagem e link, e preço dos selados, citando "validado no T-13 (docs/evidencias/T-13_hipoteses.md)". Na seção "Perguntas abertas", deixe como hipótese só a janela de PTAX e CDI e os parâmetros de repetição. Mostre o diff, atualize a seção "Decisão do autor" da evidência e a linha da T-13 em docs/prompts.md. Mantenha o script com a regra antiga, como está."; correção 2 aplicada em `specs/spec.md`, evidência atualizada, script mantido |
+| 2026-11-03 | T-14 | texto completo em [Prompt da T-14 – ADR-002](#prompt-da-t-14--adr-002) | rascunho aprovado com ajuste: mantidas as seis alternativas (as quatro do prompt mais bind mount e binário instalado à mão, da seção 6 do plan); decisão a mais do autor: "os testes de integração (RNF-07) usam a mesma imagem e a mesma tag (ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z), para que o teste rode o mesmo binário do ambiente de trabalho"; cenário do RNF-07 e seção Decisão ajustados; ADR salvo em `docs/adr/ADR-002-imagem-minio.md`, T-14 marcada como [x] |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -660,4 +661,35 @@ Somente docs/adr/ADR-001-bruto-branch-dados-raw.md, em Markdown, com no máximo 
 [E] Extras
 Leia antes: AGENTS.md, docs/01_objetivos_negocio.md, specs/spec.md (RF-01, RF-02, RF-04, RF-05, RNF-03, RNF-08, RNF-09, RNF-13) e specs/plan.md (seções 5, 6 e 7).
 Ao final, proponha a mensagem de commit docs(T-07): ADR-001 bruto na branch dados-raw [RF-01, RF-05]. Pare ao final.
+```
+
+## Prompt da T-14 – ADR-002
+
+```text
+[C] Personagem
+Você é um arquiteto de software de dados. Você registra uma decisão já tomada pelo autor, com as alternativas descartadas e os custos dela. Você não escreve código nesta etapa.
+
+[R] Pedido
+Execute a tarefa T-14 de specs/tasks.md: escreva o ADR-002 registrando a decisão de rodar o MinIO local no Codespace por docker compose com a imagem ghcr.io/coollabsio/minio, tag fixada RELEASE.2025-10-15T17-29-55Z, portas 9000 (API) e 9001 (console), volume nomeado e healthcheck com "mc ready local". Use o nome de arquivo que está na T-14 do specs/tasks.md.
+Use as mesmas seções do ADR-001: Status (aceito, com a data de hoje); Contexto e forças; Requisitos e cenários relacionados; Alternativas consideradas; Decisão e táticas; Consequências positivas; Consequências negativas; Riscos; Evidência necessária; Condição de revisão.
+
+[E] Exemplos
+Siga o formato e o nível de detalhe de docs/adr/ADR-001-bruto-dados-raw.md.
+
+[A] Ajustes
+- Fatos de contexto, a registrar como fatos: a edição comunitária do MinIO entrou em modo de manutenção em dezembro de 2025, o repositório foi arquivado em abril de 2026 e deixaram de ser publicadas imagens Docker oficiais; a imagem da coolLabs é construída a partir das releases oficiais e é a usada pelo template de MinIO do Railway; ela já traz o cliente mc e não traz curl nem wget, por isso o healthcheck usa "mc ready local".
+- Alternativas obrigatórias, cada uma com o motivo do descarte: tag latest da coolLabs (cada execução poderia rodar um binário diferente, o que quebra a reprodução); imagem minio/minio antiga do Docker Hub (sem atualizações oficiais); compilar o MinIO a partir do código-fonte (tempo de build e manutenção sem ganho para o projeto); outro object storage compatível com S3, como o RustFS (o projeto já está desenhado sobre o MinIO e a troca não atende nenhum requisito a mais).
+- Táticas pelo nome e atributo: vínculo em tempo de configuração (endpoint e credenciais no .env), para modificabilidade; versão fixada, para reprodutibilidade; monitoramento por healthcheck, para disponibilidade; separar estado (volume nomeado) da computação (contêiner), para durabilidade.
+- Consequências negativas reais, entre elas: correções de segurança exigem trocar a tag manualmente; dependência de um mantenedor terceiro (coolLabs); o console na porta 9001 dá acesso total e não pode ter a porta encaminhada como pública no Codespace; o volume some se o Codespace for apagado (mitigado pela branch dados-raw, ADR-001).
+- Condição de revisão: se a coolLabs deixar de publicar a imagem ou surgir falha de segurança na tag fixada.
+- Não invente números; use "hipótese: validação pendente" onde faltar valor. O comportamento do healthcheck na imagem ainda será confirmado na T-15: registre como evidência necessária.
+- Escreva como decisão do autor, sem citar material de aula.
+- Não altere nenhum outro arquivo além de, no final, specs/tasks.md (T-14 como [x]) e docs/prompts.md (uma linha na tabela, com este prompt registrado numa seção própria).
+
+[T] Tipo de saída
+Somente o arquivo do ADR-002, em Markdown, com no máximo duas páginas. Mostre o rascunho completo antes de salvar e espere minha confirmação.
+
+[E] Extras
+Leia antes: AGENTS.md, docs/adr/ADR-001-bruto-dados-raw.md, specs/spec.md (RF-05, RNF-07, RNF-09, RNF-10) e specs/plan.md (seções 6, 8 e 9).
+Ao final, proponha a mensagem de commit docs(T-14): ADR-002 imagem do MinIO com tag fixada [RNF-10]. Pare ao final.
 ```
