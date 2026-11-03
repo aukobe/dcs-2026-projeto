@@ -1,0 +1,3 @@
+$ git ls-tree -r origin/dados-raw
+100644 blob fa1385d99a319b43c06f5309d1aae9fdd3adea46	.gitattributes
+100644 blob 4c36dadcdc7c08307cfca8b30b51306548340801	README.md
