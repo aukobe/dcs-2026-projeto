@@ -165,7 +165,7 @@ flowchart TB
 ## 5. Fluxo diário
 
 1. **20h30 UTC**: o agendador do GitHub Actions dispara o Coletor diário. O autor também pode disparar manualmente (`workflow_dispatch`).
-2. O job (Python 3.12) faz checkout da `main` (código) e da Branch dados-raw num diretório separado. Um grupo de concorrência impede duas execuções simultâneas.
+2. O job (Python 3.13) faz checkout da `main` (código) e da Branch dados-raw num diretório separado. Um grupo de concorrência impede duas execuções simultâneas.
 3. A Guarda de horário e duplicidade calcula a data da coleta (data UTC do momento) e recusa a execução se for antes das 20h UTC.
 4. Para cada fonte (TCGCSV, PTAX, CDI), de forma independente:
    - se o arquivo do dia já existe na Branch dados-raw, a fonte é pulada e o log registra o motivo, sem nenhuma requisição;
@@ -185,7 +185,7 @@ flowchart TB
 
 | Escolha | Alternativas consideradas (motivo do descarte) | Requisito/restrição | ADR |
 |---|---|---|---|
-| Coletor diário no GitHub Actions, cron `30 20 * * *` mais `workflow_dispatch`, Python 3.12 | cron dentro do Codespace (hiberna quando parado); agendador no computador do autor (depende da máquina ligada); cron em serviço externo pago (RES-02) | RF-01, RF-04, RNF-13, RES-03, RES-07 | ADR-001 |
+| Coletor diário no GitHub Actions, cron `30 20 * * *` mais `workflow_dispatch`, Python 3.13 | cron dentro do Codespace (hiberna quando parado); agendador no computador do autor (depende da máquina ligada); cron em serviço externo pago (RES-02) | RF-01, RF-04, RNF-13, RES-03, RES-07 | ADR-001 |
 | Bruto gravado como arquivo na Branch dados-raw, no caminho idêntico à chave, commit e push só nessa branch | MinIO público pago no Railway (RES-02; exigiria credencial no Actions); artifacts do Actions (expiram, sem chave fixa); bruto na `main` (mistura dados e código) | RF-01, RF-02, RNF-08, RNF-09, RES-06, RES-08 | ADR-001 |
 | `.gitattributes` com `* -text` na Branch dados-raw | confiar na configuração padrão do Git (pode converter fim de linha); compactar os arquivos (deixa de ser a resposta original) | RF-02, RES-08 | ADR-001 |
 | Fontes verificadas e gravadas de forma independente; checagem de existência antes de qualquer requisição | coleta tudo-ou-nada (perde PTAX e CDI quando só o TCGCSV falha); checar só na hora de gravar (o RF-04 exige que nenhuma requisição seja enviada) | RF-01, RF-04, RES-03, OBJ-01 | ADR-001 |
@@ -208,7 +208,7 @@ flowchart TB
 | Makefile como ponto de entrada único | scripts shell soltos (sem ponto de entrada único); CLI com typer (dependência a mais) | RNF-10, RF-13, RF-27, OBJ-06 | — |
 | `logging` padrão na saída padrão, sem nenhum valor de credencial | loguru ou structlog (dependência a mais); arquivo de log (risco de vazar e de ir para o Git) | RF-02, RF-03, RF-04, RF-07, RNF-08 | — |
 | Verificador de cobertura lê a Branch dados-raw, fonte de verdade do bruto | ler o MinIO local (pode estar desatualizado até o próximo `make sync`); ler o histórico do Actions (não diz quais arquivos existem) | RF-27, OBJ-01 | — |
-| Python 3.12 | 3.13 (compatibilidade das bibliotecas menos garantida); 3.10 (sem `tomllib`) | sem requisito correspondente (decisão do autor) | — |
+| Python 3.13, a versão que já vem instalada no Codespace; as bibliotecas escolhidas são compatíveis com ela | 3.12 (não vem no Codespace e exigiria instalar outro interpretador, o que dificulta a reprodução a partir de clone limpo); 3.14 (compatibilidade das bibliotecas menos garantida); 3.10 (sem `tomllib`) | RNF-10 (decisão do autor) | — |
 | Branch dados-raw criada uma única vez pelo autor, numa tarefa de implementação, como branch órfã contendo só o `.gitattributes` e um README curto; o agente prepara os comandos e o autor executa | criação automática pelo Coletor diário na primeira execução (mistura preparação e coleta, e o job ganharia permissão de criar branches sem revisão); branch derivada da `main` (carrega código e histórico para a branch de dados) | RF-02, RES-08, AGENTS.md (o agente não faz commit nem push) | ADR-001 |
 | Mensagem do commit automático do Coletor diário: `dados(coleta): AAAA-MM-DD [RF-01]` | `chore(coleta): bruto de AAAA-MM-DD` (o tipo `chore` não distingue dados de manutenção); mensagem livre (não rastreável até o requisito) | RF-01, DRV-06 | ADR-001 |
 | `TCG_USER_AGENT` como variável do repositório (`vars`), não secret; o workflow não usa nenhum secret e tem só a permissão `contents: write` para o push na Branch dados-raw | `TCG_USER_AGENT` como secret (não é sensível e ficaria mascarado nos logs sem motivo); token pessoal com permissões amplas (credencial a mais para proteger) | RNF-08, RNF-13, RES-06 | ADR-001 |
