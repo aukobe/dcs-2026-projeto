@@ -1,0 +1,29 @@
+# T-06 – src/tcg/coleta/guarda.py, gravador.py e __main__.py (Coletor diário) (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_coletor.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 12 items
+
+tests/unidade/test_coletor.py::test_recusa_as_19h59_utc_sem_requisicao PASSED [  8%]
+tests/unidade/test_coletor.py::test_aceita_as_20h00_utc PASSED           [ 16%]
+tests/unidade/test_coletor.py::test_horario_com_outro_fuso_e_convertido_para_utc PASSED [ 25%]
+tests/unidade/test_coletor.py::test_horario_sem_fuso_e_recusado PASSED   [ 33%]
+tests/unidade/test_coletor.py::test_destino_inexistente_e_recusado PASSED [ 41%]
+tests/unidade/test_coletor.py::test_arquivos_do_dia_existentes_zero_requisicoes PASSED [ 50%]
+tests/unidade/test_coletor.py::test_so_prices_existente_requisita_os_outros_tres PASSED [ 58%]
+tests/unidade/test_coletor.py::test_recusa_sobrescrita_com_hash_original_intacto PASSED [ 66%]
+tests/unidade/test_coletor.py::test_hash_do_arquivo_igual_ao_do_corpo_nos_quatro_caminhos PASSED [ 75%]
+tests/unidade/test_coletor.py::test_gravar_devolve_sha256_do_corpo PASSED [ 83%]
+tests/unidade/test_coletor.py::test_falha_de_uma_fonte_nao_afeta_as_outras PASSED [ 91%]
+tests/unidade/test_coletor.py::test_reexecucao_apos_falha_parcial_busca_so_o_que_faltou PASSED [100%]
+
+============================== 12 passed in 0.13s ==============================
+
+$ make test
+tests/unidade/test_pacote.py::test_python_313 PASSED                     [100%]
+
+============================== 55 passed in 0.26s ==============================
