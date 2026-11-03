@@ -1,0 +1,27 @@
+# T-05 – src/tcg/coleta/tcgcsv.py e src/tcg/coleta/bcb.py (Clientes TCGCSV e BCB) (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_clientes.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 10 items
+
+tests/unidade/test_clientes.py::test_urls_tcgcsv_do_group_id_24269 PASSED [ 10%]
+tests/unidade/test_clientes.py::test_url_ptax_janela_de_10_dias PASSED   [ 20%]
+tests/unidade/test_clientes.py::test_url_cdi_janela_de_10_dias PASSED    [ 30%]
+tests/unidade/test_clientes.py::test_janela_inclui_os_dois_extremos_e_tem_10_dias PASSED [ 40%]
+tests/unidade/test_clientes.py::test_janela_atravessa_virada_do_ano PASSED [ 50%]
+tests/unidade/test_clientes.py::test_janela_segue_o_parametro PASSED     [ 60%]
+tests/unidade/test_clientes.py::test_janela_invalida_e_recusada PASSED   [ 70%]
+tests/unidade/test_clientes.py::test_corpo_devolvido_sem_alteracao_nas_quatro_fontes PASSED [ 80%]
+tests/unidade/test_clientes.py::test_cada_busca_faz_uma_chamada_com_url_e_fonte PASSED [ 90%]
+tests/unidade/test_clientes.py::test_url_montada_chega_intacta_a_requisicao_preparada PASSED [100%]
+
+============================== 10 passed in 0.23s ==============================
+
+$ make test
+tests/unidade/test_pacote.py::test_python_313 PASSED                     [100%]
+
+============================== 43 passed in 0.21s ==============================
