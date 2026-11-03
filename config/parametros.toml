@@ -1,0 +1,28 @@
+# Parâmetros do pipeline (specs/plan.md, seção 8).
+
+# Hipótese: validação pendente (RF-01). Janela da PTAX e do CDI, em dias corridos.
+janela_dias = 10
+
+# Hipótese: validação pendente (RF-03). Tentativas em falha transitória.
+tentativas = 3
+
+# Hipótese: validação pendente (RF-03). Esperas entre tentativas, em segundos.
+esperas_s = [2, 4, 8]
+
+# Regra da fonte (RES-03). Pausa mínima entre requisições ao TCGCSV.
+pausa_minima_ms = 100
+
+# Regra da fonte (RES-03). Coleta só depois desta hora UTC.
+hora_minima_utc = 20
+
+# Regra da fonte (RES-03). Limite de requisições por dia.
+limite_requisicoes_dia = 10000
+
+# Hipótese: validação pendente (RF-24). Taxa de venda no valor de liquidação.
+taxa_venda = 0.15
+
+# Enunciado (OBJ-03). Preço mínimo, em US$, no primeiro dia para a P1.
+preco_minimo_p1_usd = 1
+
+# Enunciado (OBJ-04). Preço mínimo, em US$, para a P5.
+preco_minimo_p5_usd = 5

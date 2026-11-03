@@ -1,0 +1,70 @@
+# T-03 – config/colecao.toml, config/parametros.toml, src/tcg/config.py e src/tcg/log.py (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_config.py tests/unidade/test_log.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 18 items
+
+tests/unidade/test_config.py::test_colecao_com_valores_da_spec PASSED    [  5%]
+tests/unidade/test_config.py::test_parametros_com_valores_do_plano PASSED [ 11%]
+tests/unidade/test_config.py::test_toml_com_chave_ausente_gera_erro_claro PASSED [ 16%]
+tests/unidade/test_config.py::test_toml_ausente_gera_erro_claro PASSED   [ 22%]
+tests/unidade/test_config.py::test_user_agent_lido_do_ambiente PASSED    [ 27%]
+tests/unidade/test_config.py::test_user_agent_ausente_ou_vazio_gera_erro_claro[None] PASSED [ 33%]
+tests/unidade/test_config.py::test_user_agent_ausente_ou_vazio_gera_erro_claro[] PASSED [ 38%]
+tests/unidade/test_config.py::test_user_agent_ausente_ou_vazio_gera_erro_claro[   ] PASSED [ 44%]
+tests/unidade/test_config.py::test_config_minio_lida_do_ambiente PASSED  [ 50%]
+tests/unidade/test_config.py::test_variavel_minio_ausente_gera_erro_com_o_nome[MINIO_ACCESS_KEY] PASSED [ 55%]
+tests/unidade/test_config.py::test_variavel_minio_ausente_gera_erro_com_o_nome[MINIO_SECRET_KEY] PASSED [ 61%]
+tests/unidade/test_config.py::test_variavel_minio_ausente_gera_erro_com_o_nome[MINIO_ENDPOINT] PASSED [ 66%]
+tests/unidade/test_config.py::test_erro_nao_expoe_valor_de_credencial PASSED [ 72%]
+tests/unidade/test_config.py::test_repr_nao_mostra_credenciais PASSED    [ 77%]
+tests/unidade/test_log.py::test_formato_utc_nivel_e_componente PASSED    [ 83%]
+tests/unidade/test_log.py::test_formato_geral PASSED                     [ 88%]
+tests/unidade/test_log.py::test_credenciais_nao_aparecem_no_log PASSED   [ 94%]
+tests/unidade/test_log.py::test_sem_credenciais_no_ambiente_mensagem_intacta PASSED [100%]
+
+============================== 18 passed in 0.05s ==============================
+código de saída: 0
+$ make test
+.venv/bin/python -m pytest -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.16.0
+collecting ... collected 25 items
+
+tests/unidade/test_bloqueio_rede.py::test_socket_direto_falha PASSED     [  4%]
+tests/unidade/test_bloqueio_rede.py::test_create_connection_falha PASSED [  8%]
+tests/unidade/test_bloqueio_rede.py::test_requests_falha PASSED          [ 12%]
+tests/unidade/test_bloqueio_rede.py::test_resolucao_dns_falha PASSED     [ 16%]
+tests/unidade/test_config.py::test_colecao_com_valores_da_spec PASSED    [ 20%]
+tests/unidade/test_config.py::test_parametros_com_valores_do_plano PASSED [ 24%]
+tests/unidade/test_config.py::test_toml_com_chave_ausente_gera_erro_claro PASSED [ 28%]
+tests/unidade/test_config.py::test_toml_ausente_gera_erro_claro PASSED   [ 32%]
+tests/unidade/test_config.py::test_user_agent_lido_do_ambiente PASSED    [ 36%]
+tests/unidade/test_config.py::test_user_agent_ausente_ou_vazio_gera_erro_claro[None] PASSED [ 40%]
+tests/unidade/test_config.py::test_user_agent_ausente_ou_vazio_gera_erro_claro[] PASSED [ 44%]
+tests/unidade/test_config.py::test_user_agent_ausente_ou_vazio_gera_erro_claro[   ] PASSED [ 48%]
+tests/unidade/test_config.py::test_config_minio_lida_do_ambiente PASSED  [ 52%]
+tests/unidade/test_config.py::test_variavel_minio_ausente_gera_erro_com_o_nome[MINIO_ACCESS_KEY] PASSED [ 56%]
+tests/unidade/test_config.py::test_variavel_minio_ausente_gera_erro_com_o_nome[MINIO_SECRET_KEY] PASSED [ 60%]
+tests/unidade/test_config.py::test_variavel_minio_ausente_gera_erro_com_o_nome[MINIO_ENDPOINT] PASSED [ 64%]
+tests/unidade/test_config.py::test_erro_nao_expoe_valor_de_credencial PASSED [ 68%]
+tests/unidade/test_config.py::test_repr_nao_mostra_credenciais PASSED    [ 72%]
+tests/unidade/test_log.py::test_formato_utc_nivel_e_componente PASSED    [ 76%]
+tests/unidade/test_log.py::test_formato_geral PASSED                     [ 80%]
+tests/unidade/test_log.py::test_credenciais_nao_aparecem_no_log PASSED   [ 84%]
+tests/unidade/test_log.py::test_sem_credenciais_no_ambiente_mensagem_intacta PASSED [ 88%]
+tests/unidade/test_pacote.py::test_importa_pacote PASSED                 [ 92%]
+tests/unidade/test_pacote.py::test_versao_igual_metadados PASSED         [ 96%]
+tests/unidade/test_pacote.py::test_python_313 PASSED                     [100%]
+
+============================== 25 passed in 0.18s ==============================
+código de saída: 0
