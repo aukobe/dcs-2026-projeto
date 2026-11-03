@@ -69,7 +69,7 @@ A resposta original de cada fonte é gravada sem alteração na chave do dia da 
   - E, dado um corpo HTTP gravado, o hash do objeto no bruto é igual ao hash desse corpo
 
 ### RF-03: User-Agent, pausa e repetição com espera crescente
-Falhas transitórias são repetidas com espera crescente. Tentativas e esperas são parâmetros configuráveis (hipótese: validação pendente), com valores iniciais de 3 tentativas e espera de 2, 4 e 8 segundos.
+Falhas transitórias são repetidas com espera crescente. Tentativas e esperas são parâmetros configuráveis (hipótese: validação pendente), com valores iniciais de até 3 repetições após a primeira chamada (no máximo 4 requisições), com esperas de 2, 4 e 8 segundos.
 - Origem: RES-03
 - Critério de aceite:
   - Dado um servidor simulado que registra as requisições e falha com 503 nas duas primeiras

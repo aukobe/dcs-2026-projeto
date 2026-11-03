@@ -3,7 +3,7 @@
 # Hipótese: validação pendente (RF-01). Janela da PTAX e do CDI, em dias corridos.
 janela_dias = 10
 
-# Hipótese: validação pendente (RF-03). Tentativas em falha transitória.
+# Hipótese: validação pendente (RF-03). Tentativas em falha transitória: repetições após a primeira chamada.
 tentativas = 3
 
 # Hipótese: validação pendente (RF-03). Esperas entre tentativas, em segundos.

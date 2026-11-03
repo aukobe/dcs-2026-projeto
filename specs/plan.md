@@ -145,7 +145,7 @@ flowchart TB
 | Componente | Responsabilidade | Requisitos |
 |---|---|---|
 | Guarda de horário e duplicidade | Recusa a execução antes das 20h UTC. Para cada fonte, verifica se o arquivo do dia já existe na Branch dados-raw **antes** de qualquer requisição; se existir, pula a fonte e registra no log. | RF-04, RES-03 |
-| Cliente HTTP | Sessão `requests` com o User-Agent de `TCG_USER_AGENT`, pausa mínima de 100 ms entre chamadas, repetição com espera crescente (3 tentativas: 2, 4 e 8 s) e contagem de requisições. | RF-03, RNF-12 |
+| Cliente HTTP | Sessão `requests` com o User-Agent de `TCG_USER_AGENT`, pausa mínima de 100 ms entre chamadas, repetição com espera crescente (até 3 repetições após a primeira chamada, com esperas de 2, 4 e 8 s) e contagem de requisições. | RF-03, RNF-12 |
 | Cliente TCGCSV | Busca `products` e `prices` do groupId 24269. | RF-01 |
 | Cliente BCB | Busca a PTAX (Olinda, `CotacaoMoedaPeriodo` com moeda USD, que traz o tipo de boletim) e o CDI (SGS, série 12) nos 10 dias corridos até a data da coleta. Endpoints exatos a confirmar na tarefa. | RF-01, RES-04, RES-05 |
 | Gravador do bruto | Grava o corpo HTTP byte a byte em `raw/<fonte>/group_id=24269/data=AAAA-MM-DD/<arquivo>` no checkout da Branch dados-raw, em modo de criação exclusiva (falha se o arquivo existir). | RF-02, RES-08 |
