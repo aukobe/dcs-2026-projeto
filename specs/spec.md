@@ -8,8 +8,8 @@ Requisitos derivados de `docs/00_persona.md` e `docs/01_objetivos_negocio.md`. C
 - **Primeiro dia**: menor `data` com bruto do TCGCSV da coleção. **Último dia**: maior `data` com esse bruto.
 - **Data da coleta**: data UTC do momento da coleta.
 - **PTAX aplicada no dia D**: a cotação de boletim `Fechamento` com a maior `data` ≤ D. Nunca uma de data posterior.
-- **tipo_produto** (hipótese: validação pendente na primeira coleta): produto sem número de carta é `selado`; os demais são `carta`. Exceção: raridade "Code Card" é sempre `carta`.
-- **Raridades "Double Rare em diante"** (hipótese: validação pendente na primeira coleta), em ordem: Double Rare, Ultra Rare, Illustration Rare, Special Illustration Rare, Hyper Rare. Uma raridade que a fonte trouxer fora da lista entra como pendência na primeira coleta.
+- **tipo_produto** (validado no T-13 (docs/evidencias/T-13_hipoteses.md)): produto sem número de carta é `selado`; os demais são `carta`. Exceção: raridade "Code Card" é sempre `carta`.
+- **Raridades "Double Rare em diante"** (validado no T-13 (docs/evidencias/T-13_hipoteses.md)), em ordem: Double Rare, Ultra Rare, Illustration Rare, Special Illustration Rare, Hyper Rare. Uma raridade que a fonte trouxer fora da lista entra como pendência.
 - **Limites declarados**: as carteiras de cartas e selados compram pela PTAX de venda, sem taxa na compra; a carteira dolar compra pela PTAX de venda e vende pela PTAX de compra, sem spread nem IOF (RES-12).
 
 ## Grão de cada pergunta
@@ -225,7 +225,7 @@ Retorno no período contra o desvio-padrão dos retornos diários, só cartas ac
 
 ### RF-23: monta as cinco carteiras com dados do primeiro dia
 Custo de compra = unidades × market_price × PTAX de venda aplicada no primeiro dia, sem taxa na compra (limite declarado). Unidades inteiras; o que sobra fica em caixa.
-- **selado**: booster box da coleção, identificado pelo nome contendo "Booster Box" e não "Case" (hipótese: validação pendente na primeira coleta); se ele não tiver preço, o selado de maior preço com preço (escolha em ADR).
+- **selado**: booster box da coleção, identificado pelo nome contendo "Booster Box" e não contendo "Case" nem "Half" (na DRI, `Destined Rivals Booster Box`, productId 624679, validado no T-13 (docs/evidencias/T-13_hipoteses.md)); se ele não tiver preço, o selado de maior preço com preço (escolha em ADR).
 - **cesta_raras**: R$ 100 em cada um dos dez itens de carta (sem Code Card e sem selados) de maior market_price; desempate pelo menor `product_id`, e depois por `acabamento` em ordem alfabética.
 - **propria**: regra do autor em ADR; sem ADR, a carteira não é calculada e o painel mostra "regra pendente".
 - **dolar**: R$ 1.000 ÷ PTAX de venda aplicada no primeiro dia.
@@ -401,9 +401,6 @@ A coleta roda todo dia depois das 20h UTC sem intervenção manual, com credenci
 
 ## Perguntas abertas
 
-Nenhuma pergunta pendente nesta revisão. Continuam como hipótese, a validar na primeira coleta:
-- regra do `tipo_produto` e lista de raridades "Double Rare em diante" (Definições);
-- identificação do booster box (RF-23);
-- presença de imagem e link em todos os produtos (RF-20);
-- existência de preço próprio para os selados (RF-16, RF-23);
-- tamanho da janela de PTAX e CDI (RF-01) e parâmetros de repetição (RF-03).
+Nenhuma pergunta pendente nesta revisão. Regra do `tipo_produto`, lista de raridades "Double Rare em diante", identificação do booster box, presença de imagem e link e existência de preço próprio para os selados: validado no T-13 (docs/evidencias/T-13_hipoteses.md). Continuam como hipótese:
+- tamanho da janela de PTAX e CDI (RF-01), a confirmar com coletas em dias seguidos;
+- parâmetros de repetição (RF-03), sem falha transitória observada até agora.
