@@ -1,0 +1,18 @@
+$ git ls-tree -r --name-only origin/dados-raw
+.gitattributes
+README.md
+raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json
+raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json
+raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json
+raw/tcgplayer/group_id=24269/data=2026-11-03/products.json
+
+$ git log --oneline origin/dados-raw
+65c413a dados(coleta): 2026-11-03 [RF-01]
+e0a7b61 chore(T-08): branch órfã dados-raw [RF-02]
+
+$ gh run view 41715282582 --log | grep -i requisi
+coletar	coletar	2026-11-03T20:44:52.2731602Z 2026-11-03T20:44:52Z INFO tcg.coleta.http: requisição ok: fonte=tcgcsv_products url=https://tcgcsv.com/tcgplayer/3/24269/products status=200 tentativa=1/4
+coletar	coletar	2026-11-03T20:44:52.2855389Z 2026-11-03T20:44:52Z INFO tcg.coleta.http: requisição ok: fonte=tcgcsv_prices url=https://tcgcsv.com/tcgplayer/3/24269/prices status=200 tentativa=1/4
+coletar	coletar	2026-11-03T20:44:53.0290758Z 2026-11-03T20:44:53Z INFO tcg.coleta.http: requisição ok: fonte=bcb_ptax url=https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='USD'&@dataInicial='10-25-2026'&@dataFinalCotacao='11-03-2026'&$format=json status=200 tentativa=1/4
+coletar	coletar	2026-11-03T20:44:53.3807903Z 2026-11-03T20:44:53Z INFO tcg.coleta.http: requisição ok: fonte=bcb_cdi url=https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=25/10/2026&dataFinal=03/11/2026 status=200 tentativa=1/4
+coletar	coletar	2026-11-03T20:44:53.3813675Z 2026-11-03T20:44:53Z INFO tcg.coleta: coleta encerrada: 4 arquivos gravados; requisicoes=4
