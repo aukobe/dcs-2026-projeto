@@ -10,6 +10,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-02 | 3 – Especificação | texto completo em [Prompt da etapa 3 – Especificação](#prompt-da-etapa-3--especificação) | aprovado com ajustes (PTAX descartada por regra, carteiras com e sem taxa, placar da turma, execução agendada) |
 | 2026-11-02 | 4 – Plano | texto completo em [Prompt da etapa 4 – Plano](#prompt-da-etapa-4--plano) | aprovado com ajustes (exclusão restrita à guarda de prefixo no RNF-03 e exceção do make reprocessar no AGENTS.md, reprocessamento inclui gold_turma, gold lê produto e colecao de todas as coleções, fontes coletadas de forma independente, bloqueio de rede por fixture, carteiras em Python puro, cobertura pela branch dados-raw, criação da branch dados-raw pelo autor, mensagem do commit automático, TCG_USER_AGENT em vars, exceção da convenção de commits para o coletor no AGENTS.md) |
 | 2026-11-03 | 5 – Tarefas | texto completo em [Prompt da etapa 5 – Tarefas](#prompt-da-etapa-5--tarefas) | aprovado com ajustes (ADRs antes do código que orientam, prompts 11.1 e 11.2 no Bloco F, autoauditoria e pendências) |
+| 2026-11-03 | T-01 | "prompt de implementação padrão" (texto completo em [Prompt de implementação padrão (etapa 6)](#prompt-de-implementação-padrão-etapa-6)) | plano aprovado com ajustes (Python 3.13 em vez de 3.12, já instalado no Codespace; rede só para o PyPI; alvo `make setup` que acha o python3.13 no PATH ou em `/usr/local/python/3.13.8/bin`); `make setup` e `make test`: 3 passed; evidência em `docs/evidencias/T-01_pacote.txt` |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -567,4 +568,46 @@ O ADR-005 continua no T-35. Renumere as tarefas.
 - Acrescente uma tarefa de registro de pendências em docs/pendencias_aula08.md.
 
 Pode escrever o specs/tasks.md.
+```
+
+## Prompt de implementação padrão (etapa 6)
+
+Usado em cada tarefa de `specs/tasks.md`, trocando apenas o identificador da tarefa (T-01 no texto abaixo).
+
+```text
+[C] Personagem
+Você é um engenheiro de dados que implementa com disciplina de testes. Você executa uma única tarefa, prova que ela funciona com a saída real do terminal e para.
+
+[R] Pedido
+Implemente a tarefa T-01 de specs/tasks.md. Siga esta ordem:
+1. mostre o plano: arquivos que vai criar ou alterar, o teste que vai escrever e o comando de verificação;
+2. espere minha confirmação;
+3. crie ou altere os arquivos, com o teste junto;
+4. execute a verificação indicada na tarefa e mostre a saída real;
+5. se passou: salve a saída em docs/evidencias/T-xx_<nome>.txt, marque a tarefa como [x] em specs/tasks.md, acrescente em docs/prompts.md uma linha na tabela (data | T-xx | "prompt de implementação padrão" | resultado) e proponha a mensagem de commit no formato tipo(T-xx): descrição [RF-yy].
+
+[E] Exemplos
+Evidência bem registrada (docs/evidencias/T-04_cliente_http.txt):
+$ pytest tests/unidade/test_cliente_http.py -v
+tests/unidade/test_cliente_http.py::test_user_agent_em_toda_requisicao PASSED
+tests/unidade/test_cliente_http.py::test_pausa_minima_100ms PASSED
+tests/unidade/test_cliente_http.py::test_repeticao_com_espera_crescente PASSED
+3 passed in 0.41s
+Mensagem de commit: feat(T-04): cliente HTTP com User-Agent, pausa e repetição [RF-03]
+
+[A] Ajustes
+- Faça somente a tarefa pedida. Não adiante outras tarefas.
+- Siga o AGENTS.md, specs/spec.md e specs/plan.md; se a tarefa contradisser algum deles, pare e pergunte.
+- Não leia nem imprima o .env; não escreva credenciais em código, log, evidência ou commit.
+- Não execute exclusões no MinIO nem git push --force; não faça git commit nem git push.
+- Se a verificação falhar, mostre o erro e tente corrigir no máximo duas vezes; depois disso, pare e explique.
+- Não declare sucesso sem mostrar a saída real do comando.
+
+[T] Tipo de saída
+Os arquivos da tarefa, a evidência, specs/tasks.md e docs/prompts.md atualizados, e um resumo de até cinco linhas com o que mudou e a mensagem de commit proposta.
+
+[E] Extras
+Leia antes: AGENTS.md, specs/spec.md, specs/plan.md e specs/tasks.md.
+Nesta primeira tarefa, registre também em docs/prompts.md o texto completo deste prompt numa seção "Prompt de implementação padrão (etapa 6)".
+Pare ao final da tarefa.
 ```

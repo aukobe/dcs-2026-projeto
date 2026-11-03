@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tcg"
+version = "0.1.0"
+description = "Pipeline diário da coleção Pokémon TCG SV10: Destined Rivals (DRI, groupId 24269): bruto, silver, gold e painel."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+# Versões fixadas (RNF-10); bibliotecas escolhidas na seção 6 de specs/plan.md.
+dependencies = [
+    "requests==2.34.2",
+    "minio==7.2.20",
+    "pydantic==2.14.2",
+    "duckdb==2.0.0",
+    "streamlit==1.66.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.2.0",
+    "vcrpy==9.4.2",
+    "testcontainers==4.15.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
