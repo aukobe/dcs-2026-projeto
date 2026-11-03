@@ -2,7 +2,7 @@ PYTHON ?= .venv/bin/python
 # python3.13 do PATH; se não houver, o caminho fixo do Codespace
 PYTHON313 ?= $(shell command -v python3.13 2>/dev/null || echo /usr/local/python/3.13.8/bin/python3.13)
 
-.PHONY: setup test
+.PHONY: setup test up
 
 setup:
 	@test -x "$(PYTHON313)" || { echo "python3.13 não encontrado no PATH nem em /usr/local/python/3.13.8/bin" >&2; exit 1; }
@@ -11,3 +11,7 @@ setup:
 
 test:
 	$(PYTHON) -m pytest -v
+
+# Sobe o MinIO local e só termina quando o healthcheck estiver healthy (ADR-002)
+up:
+	docker compose up -d --wait

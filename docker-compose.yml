@@ -1,0 +1,26 @@
+# MinIO local de trabalho (ADR-002; RNF-09, RNF-10).
+# Credenciais vêm só do .env (RNF-08): sem MINIO_ACCESS_KEY e MINIO_SECRET_KEY
+# o compose recusa subir, em vez de cair na senha padrão do MinIO.
+# Console na porta 9001: manter o encaminhamento de porta privado no Codespace.
+services:
+  minio:
+    image: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?defina MINIO_ACCESS_KEY no .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?defina MINIO_SECRET_KEY no .env}
+    volumes:
+      - minio_dados:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  minio_dados:

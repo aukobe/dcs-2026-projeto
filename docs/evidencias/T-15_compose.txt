@@ -1,0 +1,43 @@
+# T-15: docker compose do MinIO (ADR-002; RNF-09, RNF-10) — 2026-11-03
+# .env ausente nesta data (preenchido na T-16); credenciais abaixo são fictícias, só na linha de comando.
+
+## 1. Verificação da tarefa
+$ pytest tests/unidade/test_compose.py -v && docker compose config --quiet
+tests/unidade/test_compose.py::test_imagem_com_tag_fixada PASSED         [ 16%]
+tests/unidade/test_compose.py::test_portas_9000_e_9001 PASSED            [ 33%]
+tests/unidade/test_compose.py::test_volume_nomeado PASSED                [ 50%]
+tests/unidade/test_compose.py::test_healthcheck_mc_ready_local PASSED    [ 66%]
+tests/unidade/test_compose.py::test_credenciais_vindas_de_variaveis PASSED [ 83%]
+tests/unidade/test_compose.py::test_alvo_make_up PASSED                  [100%]
+============================== 6 passed in 0.05s ===============================
+
+$ docker compose config --quiet   # sem .env e sem variáveis: recusa esperada
+error while interpolating services.minio.environment.MINIO_ROOT_PASSWORD: required variable MINIO_SECRET_KEY is missing a value: defina MINIO_SECRET_KEY no .env
+error while interpolating services.minio.environment.MINIO_ROOT_USER: required variable MINIO_ACCESS_KEY is missing a value: defina MINIO_ACCESS_KEY no .env
+código de saída: 1
+
+$ MINIO_ACCESS_KEY=ficticio MINIO_SECRET_KEY=ficticio-t15 docker compose config --quiet
+código de saída: 0
+
+## 2. Confirmação do healthcheck na imagem fixada (R-07), contêiner descartável
+$ docker pull ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z
+ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z
+
+$ docker run -d --rm --name minio-t15 -e MINIO_ROOT_USER=ficticio -e MINIO_ROOT_PASSWORD=ficticio-t15 ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z server /data
+contêiner minio-t15 iniciado
+
+$ docker exec minio-t15 sh -c "command -v curl wget; command -v mc"
+curl: ausente
+wget: ausente
+/usr/bin/mc
+
+$ docker exec minio-t15 mc ready local   # tentativas a cada 1 s até responder
+The cluster 'local' is unreachable: Get "http://localhost:9000/minio/health/cluster": dial tcp [::1]:9000: connect: connection refused
+The cluster 'local' is ready
+código de saída: 0 (tentativa 1)
+
+$ docker stop minio-t15   # --rm remove o contêiner descartável
+minio-t15 parado e removido
+
+$ docker ps -a --filter name=minio-t15 --format "{{.Names}}"
+(nenhum contêiner)
