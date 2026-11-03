@@ -1,0 +1,88 @@
+# Coletor diário (T-10; specs/plan.md, seção 5; ADR-001).
+# Grava o bruto do dia na branch dados-raw. Nenhum secret: só o GITHUB_TOKEN
+# com contents: write e TCG_USER_AGENT vindo de vars.
+name: coleta
+
+on:
+  schedule:
+    - cron: "30 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coleta-dados-raw
+  cancel-in-progress: false
+
+jobs:
+  coletar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TCG_USER_AGENT: ${{ vars.TCG_USER_AGENT }}
+    steps:
+      - name: checkout do código (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: codigo
+          persist-credentials: false
+
+      - name: checkout do bruto (dados-raw)
+        uses: actions/checkout@v4
+        with:
+          ref: dados-raw
+          path: dados
+
+      - name: Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: instalar o pacote
+        run: python -m pip install -e ./codigo
+
+      - name: coletar
+        id: coleta
+        working-directory: codigo
+        run: |
+          set +e
+          python -m tcg.coleta --destino ../dados
+          echo "codigo=$?" >> "$GITHUB_OUTPUT"
+
+      # Código 0 (tudo gravado ou já existente) ou 1 (falha parcial):
+      # publica o que foi gravado. Código 2 (recusa): nada a commitar.
+      - name: publicar na dados-raw
+        if: steps.coleta.outputs.codigo == '0' || steps.coleta.outputs.codigo == '1'
+        working-directory: dados
+        run: |
+          set -euo pipefail
+          if [ ! -d raw ]; then
+            echo "nenhum arquivo gravado; nada a commitar"
+            exit 0
+          fi
+          git add raw
+          if git diff --cached --quiet; then
+            echo "nenhum arquivo novo; nada a commitar"
+            exit 0
+          fi
+          datas=$(git diff --cached --name-only | sed -n 's|.*/data=\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)/.*|\1|p' | sort -u)
+          if [ "$(printf '%s\n' "$datas" | grep -c .)" -ne 1 ]; then
+            echo "erro: esperada uma única data nos arquivos novos, encontrado: $datas" >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "dados(coleta): $datas [RF-01]"
+          git push origin HEAD:refs/heads/dados-raw
+
+      - name: resultado da coleta
+        if: always()
+        env:
+          CODIGO: ${{ steps.coleta.outputs.codigo }}
+        run: |
+          echo "código de saída do coletor: ${CODIGO:-ausente}"
+          if [ "${CODIGO:-}" != "0" ]; then
+            exit "${CODIGO:-1}"
+          fi

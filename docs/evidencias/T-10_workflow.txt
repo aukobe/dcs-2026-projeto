@@ -1,0 +1,26 @@
+# T-10 – .github/workflows/coleta.yml (Coletor diário no GitHub Actions) (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_workflow.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 11 items
+
+tests/unidade/test_workflow.py::test_cron_20h30_utc PASSED               [  9%]
+tests/unidade/test_workflow.py::test_disparo_manual PASSED               [ 18%]
+tests/unidade/test_workflow.py::test_grupo_de_concorrencia_sem_cancelar PASSED [ 27%]
+tests/unidade/test_workflow.py::test_permissoes_minimas PASSED           [ 36%]
+tests/unidade/test_workflow.py::test_nenhum_secret PASSED                [ 45%]
+tests/unidade/test_workflow.py::test_user_agent_vem_de_vars PASSED       [ 54%]
+tests/unidade/test_workflow.py::test_python_313 PASSED                   [ 63%]
+tests/unidade/test_workflow.py::test_checkouts_main_e_dados_raw_separados PASSED [ 72%]
+tests/unidade/test_workflow.py::test_push_so_na_dados_raw PASSED         [ 81%]
+tests/unidade/test_workflow.py::test_commit_no_formato_do_coletor PASSED [ 90%]
+tests/unidade/test_workflow.py::test_publica_com_codigo_1_e_falha_depois PASSED [100%]
+
+============================== 11 passed in 0.07s ==============================
+
+$ .venv/bin/python -m pytest -q
+73 passed in 0.66s
