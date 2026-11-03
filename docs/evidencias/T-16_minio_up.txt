@@ -1,0 +1,6 @@
+$ docker compose ps
+NAME                       IMAGE                                                   COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+dcs-2026-projeto-minio-1   ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z   "/usr/bin/docker-ent…"   minio     44 seconds ago   Up 43 seconds (healthy)   0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
+
+$ git check-ignore .env
+.env
