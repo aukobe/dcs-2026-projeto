@@ -1,0 +1,20 @@
+# T-04 – src/tcg/coleta/http.py (Cliente HTTP) (2026-11-03)
+$ .venv/bin/python -m pytest tests/unidade/test_http.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 8 items
+
+tests/unidade/test_http.py::test_user_agent_em_toda_requisicao PASSED    [ 12%]
+tests/unidade/test_http.py::test_user_agent_lido_de_tcg_user_agent PASSED [ 25%]
+tests/unidade/test_http.py::test_pausa_minima_100ms PASSED               [ 37%]
+tests/unidade/test_http.py::test_dois_503_esperas_2_e_4_sucesso_na_terceira PASSED [ 50%]
+tests/unidade/test_http.py::test_falha_total_levanta_erro_e_registra_no_log PASSED [ 62%]
+tests/unidade/test_http.py::test_erro_nao_transitorio_nao_repete PASSED  [ 75%]
+tests/unidade/test_http.py::test_requisicao_alem_do_limite_e_recusada PASSED [ 87%]
+tests/unidade/test_http.py::test_repeticoes_contam_no_limite PASSED      [100%]
+
+============================== 8 passed in 0.15s ===============================

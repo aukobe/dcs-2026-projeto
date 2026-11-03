@@ -85,7 +85,7 @@ def ler_parametros(caminho: Path | None = None) -> Parametros:
     dados = _ler_toml(caminho, Parametros)
     dados["esperas_s"] = tuple(dados["esperas_s"])
     if len(dados["esperas_s"]) != dados["tentativas"]:
-        raise ConfiguracaoError("esperas_s deve ter um valor por tentativa")
+        raise ConfiguracaoError("esperas_s deve ter um valor de espera por repetição")
     return Parametros(**dados)
 
 
