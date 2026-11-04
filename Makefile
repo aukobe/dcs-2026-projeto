@@ -8,6 +8,8 @@ setup:
 	@test -x "$(PYTHON313)" || { echo "python3.13 não encontrado no PATH nem em /usr/local/python/3.13.8/bin" >&2; exit 1; }
 	$(PYTHON313) -m venv .venv
 	$(PYTHON) -m pip install -q -e ".[dev]"
+	# Extensão httpfs do DuckDB, baixada só aqui (R-08); o código nunca a baixa
+	$(PYTHON) -c "import duckdb; duckdb.connect().install_extension('httpfs')"
 
 test:
 	$(PYTHON) -m pytest -v

@@ -1,0 +1,18 @@
+# T-24 – src/tcg/lake/duckdb.py (conexão DuckDB com httpfs para o MinIO) (2026-11-04)
+# httpfs instalada uma única vez de extensions.duckdb.org, com autorização do autor: [('httpfs', True, True, '77392a7207')]
+$ .venv/bin/python -m pytest tests/integracao/test_duckdb_minio.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 5 items
+
+tests/integracao/test_duckdb_minio.py::test_parquet_gravado_e_lido_com_os_mesmos_tipos PASSED [ 20%]
+tests/integracao/test_duckdb_minio.py::test_objeto_existe_no_bucket_pelo_sdk PASSED [ 40%]
+tests/integracao/test_duckdb_minio.py::test_chave_fora_da_guarda_nao_grava_nada PASSED [ 60%]
+tests/integracao/test_duckdb_minio.py::test_credenciais_fora_do_log PASSED [ 80%]
+tests/integracao/test_duckdb_minio.py::test_sem_httpfs_instalado_falha_apontando_make_setup PASSED [100%]
+
+============================== 5 passed in 2.52s ===============================
