@@ -1,0 +1,22 @@
+{
+  "raw/tcgplayer/group_id=24269/data=2026-11-03/products.json": {
+    "blob": "d2d2149272c2cf214ce5705fff37c2e4a8c5fd9a",
+    "sha256": "3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839",
+    "bytes": 328928
+  },
+  "raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json": {
+    "blob": "9904b279c3f2d7bb0f66407571e5c0d86ec29c5b",
+    "sha256": "8334d619af6ce2b16309a3ef474c85862a0c9cf498466502366768e9b916eac5",
+    "bytes": 68212
+  },
+  "raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json": {
+    "blob": "0c745d21a55fcc5c8ee9a4b8b2be1f2fcbbdfead",
+    "sha256": "e48f248bd84adc3d09fd153811a3fa1b3a22c28a35a75b3841b7fde723511fbd",
+    "bytes": 5338
+  },
+  "raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json": {
+    "blob": "2047104f22aa05086c274689c15e7de2a3526f37",
+    "sha256": "5667042041c7163de0c0d33a37652759accdabc9c59771f9570bb3f4a8032b42",
+    "bytes": 206
+  }
+}

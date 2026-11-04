@@ -1,0 +1,39 @@
+# T-20 – cassetes vcrpy montados do bruto real de 2026-11-03 e coleta sem rede (2026-11-04)
+
+## Montagem (executada uma vez; sem git fetch e sem requisição às fontes)
+$ .venv/bin/python scripts/montar_cassetes.py
+raw/tcgplayer/group_id=24269/data=2026-11-03/products.json blob=d2d2149272c2cf214ce5705fff37c2e4a8c5fd9a sha256=3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839 bytes=328928
+raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json blob=9904b279c3f2d7bb0f66407571e5c0d86ec29c5b sha256=8334d619af6ce2b16309a3ef474c85862a0c9cf498466502366768e9b916eac5 bytes=68212
+raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json blob=0c745d21a55fcc5c8ee9a4b8b2be1f2fcbbdfead sha256=e48f248bd84adc3d09fd153811a3fa1b3a22c28a35a75b3841b7fde723511fbd bytes=5338
+raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json blob=2047104f22aa05086c274689c15e7de2a3526f37 sha256=5667042041c7163de0c0d33a37652759accdabc9c59771f9570bb3f4a8032b42 bytes=206
+gravados: tests/integracao/cassetes/coleta_2026-11-03.yaml, tests/integracao/cassetes/coleta_2026-11-03.hashes.json
+
+$ .venv/bin/python scripts/montar_cassetes.py   # segunda execução: recusa sobrescrever
+cassete já existe, nada gravado: tests/integracao/cassetes/coleta_2026-11-03.yaml
+(código de saída: 1)
+
+$ git ls-tree -r -l origin/dados-raw -- raw/   # bruto real de comparação
+100644 blob 2047104f22aa05086c274689c15e7de2a3526f37     206	raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json
+100644 blob 0c745d21a55fcc5c8ee9a4b8b2be1f2fcbbdfead    5338	raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json
+100644 blob 9904b279c3f2d7bb0f66407571e5c0d86ec29c5b   68212	raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json
+100644 blob d2d2149272c2cf214ce5705fff37c2e4a8c5fd9a  328928	raw/tcgplayer/group_id=24269/data=2026-11-03/products.json
+
+## Verificação
+$ .venv/bin/python -m pytest tests/integracao/test_coleta_cassetes.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 4 items
+
+tests/integracao/test_coleta_cassetes.py::test_coleta_grava_os_quatro_arquivos_com_hash_do_bruto_real PASSED [ 25%]
+tests/integracao/test_coleta_cassetes.py::test_requisicao_fora_do_cassete_falha_sem_sair_para_a_rede PASSED [ 50%]
+tests/integracao/test_coleta_cassetes.py::test_rede_bloqueada_no_modulo PASSED [ 75%]
+tests/integracao/test_coleta_cassetes.py::test_manifesto_igual_ao_bruto_da_branch PASSED [100%]
+
+============================== 4 passed in 0.81s ===============================
+
+$ .venv/bin/python -m pytest -q
+124 passed in 4.28s
