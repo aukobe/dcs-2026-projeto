@@ -1,0 +1,21 @@
+# T-17 – src/tcg/sync/leitor_branch.py (Leitor da branch) (2026-11-04)
+$ .venv/bin/python -m pytest tests/unidade/test_leitor_branch.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 6 items
+
+tests/unidade/test_leitor_branch.py::test_lista_so_as_chaves_de_raw PASSED [ 16%]
+tests/unidade/test_leitor_branch.py::test_bytes_identicos_inclusive_crlf[false] PASSED [ 33%]
+tests/unidade/test_leitor_branch.py::test_bytes_identicos_inclusive_crlf[true] PASSED [ 50%]
+tests/unidade/test_leitor_branch.py::test_sem_checkout PASSED            [ 66%]
+tests/unidade/test_leitor_branch.py::test_fetch_traz_dia_novo PASSED     [ 83%]
+tests/unidade/test_leitor_branch.py::test_ref_inexistente_gera_erro PASSED [100%]
+
+============================== 6 passed in 0.85s ===============================
+
+$ .venv/bin/python -m pytest -q
+91 passed in 1.79s
