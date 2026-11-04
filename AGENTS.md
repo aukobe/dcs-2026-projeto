@@ -30,6 +30,7 @@ Tudo nesta seção está **a confirmar no plan.md**.
 ## Regras de escrita no data lake
 
 - Escreva somente em prefixos com `group_id=24269`: `tcg/raw/*/group_id=24269/`, `tcg/silver/*/group_id=24269/`, `tcg/gold/group_id=24269/`, `tcg/gold_turma/carteira/group_id=24269/`.
+- Criar o bucket tcg quando ele não existir é permitido, de forma idempotente; apagar buckets continua proibido.
 - Nenhum objeto em `tcg/raw/` é sobrescrito ou apagado; antes de gravar, confira se a chave já existe e, se existir, aborte com erro.
 - A camada raw guarda a resposta original da fonte, byte a byte, sem transformação.
 - A silver é derivada exclusivamente da raw da DRI; a gold é derivada da silver da DRI e das silvers de outras coleções disponíveis, lidas somente para leitura. Ambas podem ser reconstruídas, mas só dentro dos prefixos acima.
