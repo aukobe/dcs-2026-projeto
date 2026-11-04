@@ -1,0 +1,33 @@
+# T-25 – src/tcg/silver/modelos.py (Modelos pydantic da silver) (2026-11-04)
+$ .venv/bin/python -m pytest tests/unidade/test_modelos.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 18 items
+
+tests/unidade/test_modelos.py::test_tipo_produto_rf09_selado_carta_e_code_card PASSED [  5%]
+tests/unidade/test_modelos.py::test_numero_vazio_conta_como_sem_numero PASSED [ 11%]
+tests/unidade/test_modelos.py::test_produto_sem_product_id_invalido PASSED [ 16%]
+tests/unidade/test_modelos.py::test_preco_valido_tipos_e_acabamento_do_subtypename PASSED [ 22%]
+tests/unidade/test_modelos.py::test_market_price_ausente_vira_nulo_sem_copia_de_outro_dia[nulo] PASSED [ 27%]
+tests/unidade/test_modelos.py::test_market_price_ausente_vira_nulo_sem_copia_de_outro_dia[sem_chave] PASSED [ 33%]
+tests/unidade/test_modelos.py::test_linha_de_preco_sem_product_id_invalida PASSED [ 38%]
+tests/unidade/test_modelos.py::test_boletim_intermediario_descartado_sem_erro[Abertura] PASSED [ 44%]
+tests/unidade/test_modelos.py::test_boletim_intermediario_descartado_sem_erro[Intermedi\xe1rio] PASSED [ 50%]
+tests/unidade/test_modelos.py::test_boletim_fechamento_valido_tipos_do_contrato PASSED [ 55%]
+tests/unidade/test_modelos.py::test_fechamento_sem_cotacao_venda_invalido[nulo] PASSED [ 61%]
+tests/unidade/test_modelos.py::test_fechamento_sem_cotacao_venda_invalido[sem_chave] PASSED [ 66%]
+tests/unidade/test_modelos.py::test_cdi_resposta_real_texto_com_ponto_decimal_vira_float PASSED [ 72%]
+tests/unidade/test_modelos.py::test_cdi_valor_ausente_ou_nao_numerico_invalido[None] PASSED [ 77%]
+tests/unidade/test_modelos.py::test_cdi_valor_ausente_ou_nao_numerico_invalido[] PASSED [ 83%]
+tests/unidade/test_modelos.py::test_cdi_valor_ausente_ou_nao_numerico_invalido[abc] PASSED [ 88%]
+tests/unidade/test_modelos.py::test_colecao_vem_da_config_versionada PASSED [ 94%]
+tests/unidade/test_modelos.py::test_modelos_tem_as_colunas_do_contrato PASSED [100%]
+
+============================== 18 passed in 0.15s ==============================
+
+$ .venv/bin/python -m pytest -q tests/unidade
+191 passed in 2.08s
