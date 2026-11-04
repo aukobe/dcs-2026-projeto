@@ -102,6 +102,7 @@ Um comando local copia os arquivos da branch `dados-raw` para o MinIO local.
 
 ### RF-07: valida por modelo e põe em quarentena com motivo
 Cada tabela tem um modelo de validação. Linhas inválidas vão para `silver/quarentena/group_id=24269/`, com o motivo e a `chave_raw`. Boletins da PTAX diferentes de `Fechamento` não são inválidos: são descartados por regra e não vão para a quarentena. A contagem de linhas em quarentena por tabela aparece no log de cada execução.
+Esquema da quarentena (`silver/quarentena/group_id=24269/`): tabela VARCHAR (uma das cinco tabelas da silver), motivo VARCHAR, chave_raw VARCHAR, conteudo VARCHAR (a linha original em JSON). Na divergência entre brutos, cada bruto gera a sua linha, com a sua `chave_raw`.
 - Origem: OBJ-01, DRV-06
 - Critério de aceite:
   - Dado um bruto com uma linha de preço sem `productId`, uma PTAX de boletim `Fechamento` com `cotacao_venda` ausente e uma PTAX de boletim intermediário
