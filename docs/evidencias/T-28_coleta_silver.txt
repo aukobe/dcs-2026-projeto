@@ -1,0 +1,23 @@
+# T-28 – tests/integracao/test_coleta_silver.py (integração coleta → silver com cassetes, sem rede) (2026-11-04)
+# Bucket em memória (decisão do autor: tarefa sem marca [contêiner]); socket e DNS bloqueados no módulo inteiro.
+$ .venv/bin/python -m pytest tests/integracao/test_coleta_silver.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 7 items
+
+tests/integracao/test_coleta_silver.py::test_coleta_com_cassete_grava_o_bruto_real PASSED [ 14%]
+tests/integracao/test_coleta_silver.py::test_silver_nos_caminhos_e_no_prefixo_do_contrato PASSED [ 28%]
+tests/integracao/test_coleta_silver.py::test_contrato_de_nomes_e_tipos PASSED [ 42%]
+tests/integracao/test_coleta_silver.py::test_chave_raw_aponta_para_o_bruto_coletado PASSED [ 57%]
+tests/integracao/test_coleta_silver.py::test_contagens_iguais_as_do_t13 PASSED [ 71%]
+tests/integracao/test_coleta_silver.py::test_bruto_intacto_depois_da_silver PASSED [ 85%]
+tests/integracao/test_coleta_silver.py::test_nenhuma_requisicao_saiu_para_a_rede PASSED [100%]
+
+============================== 7 passed in 1.77s ===============================
+
+$ .venv/bin/python -m pytest -q
+236 passed in 10.50s
