@@ -1,0 +1,41 @@
+# T-18 – src/tcg/lake/cliente.py (Cliente MinIO) e src/tcg/sync/sincronizador.py (Gravador sem sobrescrita) (2026-11-04)
+$ .venv/bin/python -m pytest tests/unidade/test_sincronizador.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 24 items
+
+tests/unidade/test_sincronizador.py::test_chave_existente_nao_e_regravada_e_recusa_no_log PASSED [  4%]
+tests/unidade/test_sincronizador.py::test_arquivo_novo_enviado_com_hash_da_origem PASSED [  8%]
+tests/unidade/test_sincronizador.py::test_mistura_de_existente_e_novo PASSED [ 12%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[raw/tcgplayer/group_id=99999/data=2026-11-03/prices.json] PASSED [ 16%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[silver/preco_diario/group_id=24269/data=2026-11-03/x.parquet] PASSED [ 20%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[gold/group_id=24269/fato.parquet] PASSED [ 25%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[raw/tcgplayer/group_id=24269/../group_id=99999/prices.json] PASSED [ 29%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[raw/../silver/group_id=24269/x.json] PASSED [ 33%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[/raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json] PASSED [ 37%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[raw/tcgplayer//group_id=24269/prices.json] PASSED [ 41%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[raw/tcgplayer/group_id=242690/data=2026-11-03/prices.json] PASSED [ 45%]
+tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk[raw/tcgplayer/group_id=24269] PASSED [ 50%]
+tests/unidade/test_sincronizador.py::test_nenhuma_chave_gravada_fora_de_raw_do_group_id PASSED [ 54%]
+tests/unidade/test_sincronizador.py::test_chave_permitida_aceita_as_tres_fontes PASSED [ 58%]
+tests/unidade/test_sincronizador.py::test_blob_corrompido_nao_e_enviado PASSED [ 62%]
+tests/unidade/test_sincronizador.py::test_hash_divergente_apos_envio_e_falha PASSED [ 66%]
+tests/unidade/test_sincronizador.py::test_sha1_blob_igual_ao_git PASSED  [ 70%]
+tests/unidade/test_sincronizador.py::test_existe_propaga_erro_que_nao_e_ausencia PASSED [ 75%]
+tests/unidade/test_sincronizador.py::test_bucket_ausente_e_criado PASSED [ 79%]
+tests/unidade/test_sincronizador.py::test_bucket_existente_nao_e_recriado PASSED [ 83%]
+tests/unidade/test_sincronizador.py::test_bucket_criado_em_paralelo_e_idempotente PASSED [ 87%]
+tests/unidade/test_sincronizador.py::test_criar_cliente_le_credenciais_do_ambiente_sem_registrar PASSED [ 91%]
+tests/unidade/test_sincronizador.py::test_executar_cria_bucket_e_sincroniza_sem_vazar_credencial PASSED [ 95%]
+tests/unidade/test_sincronizador.py::test_executar_sem_configuracao_recusa PASSED [100%]
+
+============================== 24 passed in 0.24s ==============================
+
+$ .venv/bin/python -m pytest -q
+........................................................................ [ 62%]
+...........................................                              [100%]
+115 passed in 1.65s
