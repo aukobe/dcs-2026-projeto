@@ -1,0 +1,29 @@
+# T-19 – tests/integracao/test_minio.py (MinIO descartável por testcontainers) (2026-11-04)
+$ docker ps --format "{{.Names}} {{.Image}} {{.Status}}"   # antes
+dcs-2026-projeto-minio-1 ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z Up 18 minutes (healthy)
+
+$ .venv/bin/python -m pytest tests/integracao/test_minio.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 5 items
+
+tests/integracao/test_minio.py::test_imagem_igual_a_do_compose PASSED    [ 20%]
+tests/integracao/test_minio.py::test_bucket_criado_uma_vez PASSED        [ 40%]
+tests/integracao/test_minio.py::test_gravacao_arquivo_novo PASSED        [ 60%]
+tests/integracao/test_minio.py::test_recusa_de_sobrescrita PASSED        [ 80%]
+tests/integracao/test_minio.py::test_sincronizacao_da_branch_duas_vezes PASSED [100%]
+
+============================== 5 passed in 2.47s ===============================
+
+$ docker ps -a --filter label=tcg.teste=T-19   # contêiner de teste removido
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker ps --format "{{.Names}} {{.Image}} {{.Status}}"   # depois: MinIO de trabalho intocado
+dcs-2026-projeto-minio-1 ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z Up 18 minutes (healthy)
+
+$ .venv/bin/python -m pytest -q
+120 passed in 3.95s
