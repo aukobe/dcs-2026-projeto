@@ -31,6 +31,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-04 | T-19 | "prompt de implementação padrão" | plano aprovado com o Ryuk do testcontainers desligado só neste módulo (evita baixar `testcontainers/ryuk` do Docker Hub); criado `tests/integracao/test_minio.py`: MinIO descartável com a imagem lida do `docker-compose.yml`, porta aleatória, credenciais geradas na hora (sem ler o `.env`) e label `tcg.teste=T-19`; testes de imagem igual à do compose, bucket criado uma vez, gravação com hash da origem, recusa de sobrescrita (ETag, `last_modified` e hash inalterados, recusa no log) e sincronização de uma branch `dados-raw` temporária executada duas vezes (4 enviados, depois 4 recusas, credenciais fora do log); o encerramento confere que o contêiner de teste foi removido e que o MinIO de trabalho manteve Id, StartedAt e RestartCount (5 passed na 1ª execução; suíte: 120 passed); evidência em `docs/evidencias/T-19_minio_descartavel.txt` |
 | 2026-11-04 | T-20 | "prompt de implementação padrão" | plano aprovado sem ajustes; criados `scripts/montar_cassetes.py` (lê os quatro blobs de `data=2026-11-03` na ref local `origin/dados-raw` pelo leitor da T-17, sem `git fetch` nem requisição às fontes; URLs montadas pelos próprios clientes TCGCSV e BCB; recusa sobrescrever cassete existente), `tests/integracao/cassetes/coleta_2026-11-03.yaml` (4 interações, corpo igual ao blob, sem `Content-Encoding`), `tests/integracao/cassetes/coleta_2026-11-03.hashes.json` (blob e sha256 de cada arquivo) e `tests/integracao/test_coleta_cassetes.py` (socket bloqueado no módulo, vcrpy em `record_mode="none"`): a coleta de 2026-11-03T20:30Z grava os quatro arquivos com sha256 e id de blob iguais aos do bruto real, com 4 requisições tocadas do cassete (4 passed na 2ª execução; a 1ª falhou porque `allow_playback_repeats` foi passado ao `VCR()` em vez do `use_cassette`; suíte: 124 passed); evidência em `docs/evidencias/T-20_cassetes.txt` |
 | 2026-11-04 | T-21 | executor: autor (tarefa manual, sem prompt) | o autor rodou `make sync` duas vezes contra o MinIO local; 1ª execução: bucket `tcg` criado e `enviados=4 recusados=0 fora_do_escopo=0 falhas=0` (os quatro arquivos de 2026-11-03); 2ª execução: bucket não recriado e `enviados=0 recusados=4 fora_do_escopo=0 falhas=0`, com uma recusa de sobrescrita no log por chave; os sha256 enviados são iguais aos dos blobs (manifesto da T-20) e a releitura no MinIO não acusou divergência; pendências futuras: (1) fixar o nome do logger do sincronizador (hoje aparece como `__main__` no log porque `make sync` roda o módulo com `-m`; usar `tcg.sync.sincronizador`), sem efeito no resultado; (2) ainda aberta desde a T-12: atualizar `actions/checkout` para v5 e `actions/setup-python` para v6 em `.github/workflows/coleta.yml`, por causa do aviso de Node.js 20 descontinuado no GitHub Actions; evidência em `docs/evidencias/T-21_primeira_sync.txt`, conferida pelo autor sem credencial |
+| 2026-11-04 | T-22 | texto completo em [Prompt da T-22 – ADR-004](#prompt-da-t-22--adr-004) | rascunho aprovado com um ajuste: a citação do ADR-003 (ainda não escrito) nas alternativas foi trocada por "plan.md, seção 6"; mantidas, por decisão do autor, a consequência negativa de `make silver` e `make gold` sobrescreverem sem apagar e a segunda condição de revisão (gravação fora do MinIO local ou versões no caminho do contrato), ambas vindas da seção 7 do plan; números das tarefas de evidência conferidos no `specs/tasks.md` (T-23, T-33, T-34); tempo de reprocessamento registrado como "hipótese: validação pendente"; arquivo `docs/adr/ADR-004-camadas-derivadas.md` |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -699,4 +700,36 @@ Somente o arquivo do ADR-002, em Markdown, com no máximo duas páginas. Mostre 
 [E] Extras
 Leia antes: AGENTS.md, docs/adr/ADR-001-bruto-dados-raw.md, specs/spec.md (RF-05, RNF-07, RNF-09, RNF-10) e specs/plan.md (seções 6, 8 e 9).
 Ao final, proponha a mensagem de commit docs(T-14): ADR-002 imagem do MinIO com tag fixada [RNF-10]. Pare ao final.
+```
+
+## Prompt da T-22 – ADR-004
+
+```text
+[C] Personagem
+Você é um arquiteto de software de dados. Você registra uma decisão já tomada pelo autor, com as alternativas descartadas e os custos dela. Você não escreve código nesta etapa.
+
+[R] Pedido
+Execute a tarefa T-22 de specs/tasks.md: escreva o ADR-004 registrando a decisão de tratar silver, gold e gold_turma como camadas derivadas, reconstruíveis a partir do bruto com um único comando (make reprocessar), que apaga e reconstrói só os objetos do nosso prefixo por meio de uma função única de exclusão com guarda de prefixo. Use o nome de arquivo que está na T-22 do specs/tasks.md.
+Use as mesmas seções do ADR-001: Status (aceito, com a data de hoje); Contexto e forças; Requisitos e cenários relacionados; Alternativas consideradas; Decisão e táticas; Consequências positivas; Consequências negativas; Riscos; Evidência necessária; Condição de revisão.
+
+[E] Exemplos
+Siga o formato e o nível de detalhe de docs/adr/ADR-001-bruto-dados-raw.md.
+
+[A] Ajustes
+- A função de exclusão aceita só silver/*/group_id=24269/, gold/group_id=24269/ e gold_turma/carteira/group_id=24269/ e recusa qualquer chave em raw/ ou de outro group_id (RNF-03); o agente nunca executa o reprocessamento, só o autor (AGENTS.md).
+- Alternativas obrigatórias, cada uma com o motivo do descarte: sobrescrever as chaves sem apagar (deixa objetos órfãos quando uma partição deixa de existir); versionar cada execução no caminho (muda o contrato comum da silver); processamento incremental com merge (mais complexo e com risco de duplicar linhas); formato de tabela transacional como Delta ou Iceberg (fora da stack escolhida e do escopo).
+- Táticas pelo nome e atributo: reconstrução a partir da fonte de verdade, para recuperabilidade; operação idempotente, para confiabilidade; ponto único de exclusão com guarda de prefixo, para integridade e segurança; separação entre camada imutável e camadas derivadas, para modificabilidade.
+- Consequências negativas reais, entre elas: o tempo de reprocessamento cresce com o número de dias (valor: hipótese: validação pendente); durante o reprocessamento a silver e a gold ficam incompletas, e o painel não deve ser consultado nesse intervalo; o código passa a ter uma operação de exclusão, mesmo que restrita.
+- Evidência necessária: teste de recusa da função de exclusão para raw/ e outro group_id (T-23); teste de idempotência do reprocessamento (tarefa do make reprocessar); pipeline completo sem chave fora do prefixo (tarefa do pipeline contra MinIO de teste). Confira os números dessas tarefas no tasks.md.
+- Condição de revisão: se o tempo de reprocessamento ficar inviável para o uso diário, avaliar processamento incremental.
+- Não invente números; use "hipótese: validação pendente" onde faltar valor.
+- Escreva como decisão do autor, sem citar material de aula.
+- Não altere nenhum outro arquivo além de, no final, specs/tasks.md (T-22 como [x]) e docs/prompts.md (uma linha na tabela, com este prompt registrado numa seção própria).
+
+[T] Tipo de saída
+Somente o arquivo do ADR-004, em Markdown, com no máximo duas páginas. Mostre o rascunho completo antes de salvar e espere minha confirmação.
+
+[E] Extras
+Leia antes: AGENTS.md, docs/adr/ADR-001-bruto-dados-raw.md, specs/spec.md (RF-13, RNF-03, RNF-04, RNF-11) e specs/plan.md (seção de reprocessamento e exclusões).
+Ao final, proponha a mensagem de commit docs(T-22): ADR-004 camadas derivadas e reprocessamento [RF-13, RNF-03]. Pare ao final.
 ```
