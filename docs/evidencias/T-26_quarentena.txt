@@ -1,0 +1,27 @@
+# T-26 – src/tcg/silver/quarentena.py (Quarentena da silver) (2026-11-04)
+$ .venv/bin/python -m pytest tests/unidade/test_quarentena.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 12 items
+
+tests/unidade/test_quarentena.py::test_preco_valido_passa_sem_quarentena PASSED [  8%]
+tests/unidade/test_quarentena.py::test_preco_sem_product_id_vai_para_quarentena_com_motivo_e_chave_raw PASSED [ 16%]
+tests/unidade/test_quarentena.py::test_fechamento_sem_cotacao_venda_vai_para_quarentena PASSED [ 25%]
+tests/unidade/test_quarentena.py::test_data_hora_invalida_vai_para_quarentena_sem_excecao PASSED [ 33%]
+tests/unidade/test_quarentena.py::test_boletim_intermediario_descartado_fora_da_quarentena PASSED [ 41%]
+tests/unidade/test_quarentena.py::test_tabela_desconhecida_recusada PASSED [ 50%]
+tests/unidade/test_quarentena.py::test_ptax_igual_em_dois_brutos_gera_uma_linha_do_bruto_mais_antigo PASSED [ 58%]
+tests/unidade/test_quarentena.py::test_cdi_igual_em_tres_brutos_gera_uma_linha_por_data PASSED [ 66%]
+tests/unidade/test_quarentena.py::test_ptax_divergente_vai_para_quarentena_uma_linha_por_bruto PASSED [ 75%]
+tests/unidade/test_quarentena.py::test_cdi_divergente_so_tira_a_data_divergente PASSED [ 83%]
+tests/unidade/test_quarentena.py::test_contagem_por_tabela_no_cenario_do_rf07 PASSED [ 91%]
+tests/unidade/test_quarentena.py::test_contagem_soma_divergencias_em_demais PASSED [100%]
+
+============================== 12 passed in 0.15s ==============================
+
+$ .venv/bin/python -m pytest -q tests/unidade
+203 passed in 2.37s
