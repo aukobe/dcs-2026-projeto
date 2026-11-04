@@ -1,0 +1,21 @@
+$ make sync   # primeira execução
+2026-11-04T17:10:51Z INFO tcg.lake.cliente: cliente MinIO: endpoint=localhost:9000 bucket=tcg secure=False
+2026-11-04T17:10:51Z INFO tcg.sync.leitor_branch: branch buscada: origin/dados-raw
+2026-11-04T17:10:51Z INFO tcg.sync.leitor_branch: arquivos em origin/dados-raw:raw/: 4
+2026-11-04T17:10:51Z INFO tcg.lake.cliente: bucket criado: tcg
+2026-11-04T17:10:51Z INFO __main__: enviado: raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json sha256=5667042041c7163de0c0d33a37652759accdabc9c59771f9570bb3f4a8032b42 bytes=206
+2026-11-04T17:10:51Z INFO __main__: enviado: raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json sha256=e48f248bd84adc3d09fd153811a3fa1b3a22c28a35a75b3841b7fde723511fbd bytes=5338
+2026-11-04T17:10:52Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json sha256=8334d619af6ce2b16309a3ef474c85862a0c9cf498466502366768e9b916eac5 bytes=68212
+2026-11-04T17:10:52Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-03/products.json sha256=3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839 bytes=328928
+2026-11-04T17:10:52Z INFO __main__: sincronização encerrada: enviados=4 recusados=0 fora_do_escopo=0 falhas=0
+
+$ make sync   # segunda execução
+2026-11-04T17:10:52Z INFO tcg.lake.cliente: cliente MinIO: endpoint=localhost:9000 bucket=tcg secure=False
+2026-11-04T17:10:52Z INFO tcg.sync.leitor_branch: branch buscada: origin/dados-raw
+2026-11-04T17:10:52Z INFO tcg.sync.leitor_branch: arquivos em origin/dados-raw:raw/: 4
+2026-11-04T17:10:52Z INFO tcg.lake.cliente: bucket já existe, não recriado: tcg
+2026-11-04T17:10:52Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json
+2026-11-04T17:10:52Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json
+2026-11-04T17:10:52Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json
+2026-11-04T17:10:52Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-03/products.json
+2026-11-04T17:10:52Z INFO __main__: sincronização encerrada: enviados=0 recusados=4 fora_do_escopo=0 falhas=0
