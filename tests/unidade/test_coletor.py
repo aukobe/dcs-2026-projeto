@@ -1,4 +1,4 @@
-"""Testes do coletor (T-06; RF-01, RF-02, RF-04).
+"""Testes do coletor (T-06, T-57; RF-01, RF-02, RF-04; ADR-007).
 
 Clientes reais do T-05 sobre um Cliente HTTP falso que registra as URLs;
 gravação num diretório temporário que faz o papel do checkout da dados-raw.
@@ -12,7 +12,7 @@ import pytest
 
 from tcg.coleta.__main__ import FALHA_FONTE, RECUSA, SUCESSO, executar
 from tcg.coleta.gravador import ArquivoExistenteError, gravar
-from tcg.coleta.guarda import data_coleta, verificar_horario
+from tcg.coleta.guarda import data_referencia
 from tcg.coleta.http import FalhaRequisicaoError
 
 DATA = "2026-11-03"
@@ -69,33 +69,86 @@ def _arquivos(destino):
     return sorted(str(p.relative_to(destino)) for p in destino.rglob("*") if p.is_file())
 
 
-# Horário (RF-04)
+def _caminhos(data):
+    return {n: c.replace(f"data={DATA}", f"data={data}") for n, c in CAMINHOS.items()}
 
-def test_recusa_as_19h59_utc_sem_requisicao(tmp_path, caplog):
+
+# Data de referência pelo ciclo do TCGCSV (RF-01, RF-04, ADR-007)
+
+@pytest.mark.parametrize(
+    ("agora", "esperada"),
+    [
+        (dt.datetime(2026, 11, 5, 0, 59, tzinfo=dt.UTC), "2026-11-04"),  # atraso real da execução #3
+        (dt.datetime(2026, 11, 4, 20, 30, tzinfo=dt.UTC), "2026-11-04"),  # cron principal
+        (dt.datetime(2026, 11, 5, 6, 30, tzinfo=dt.UTC), "2026-11-04"),  # cron de reserva
+        (dt.datetime(2026, 11, 5, 19, 59, 59, tzinfo=dt.UTC), "2026-11-04"),  # último segundo do ciclo
+        (dt.datetime(2026, 11, 5, 20, 0, tzinfo=dt.UTC), "2026-11-05"),  # virada do ciclo
+    ],
+)
+def test_grava_na_data_de_referencia_sem_recusa_por_horario(tmp_path, agora, esperada):
     http = HttpFalso()
-    agora = dt.datetime(2026, 11, 3, 19, 59, 59, tzinfo=dt.UTC)
-    with caplog.at_level(logging.INFO):
-        codigo = executar(tmp_path, agora=agora, http=http)
-    assert codigo == RECUSA
-    assert http.urls == []
-    assert _arquivos(tmp_path) == []
-    assert "coleta recusada" in caplog.text and "antes de 20h UTC" in caplog.text
-
-
-def test_aceita_as_20h00_utc(tmp_path):
-    http = HttpFalso()
-    agora = dt.datetime(2026, 11, 3, 20, 0, tzinfo=dt.UTC)
     assert executar(tmp_path, agora=agora, http=http) == SUCESSO
     assert http.requisicoes == 4
+    assert _arquivos(tmp_path) == sorted(_caminhos(esperada).values())
 
 
-def test_horario_com_outro_fuso_e_convertido_para_utc():
+def test_data_referencia_fronteiras():
+    assert data_referencia(dt.datetime(2026, 11, 4, 19, 59, 59, tzinfo=dt.UTC), 20) == dt.date(2026, 11, 3)
+    assert data_referencia(dt.datetime(2026, 11, 4, 20, 0, tzinfo=dt.UTC), 20) == dt.date(2026, 11, 4)
+    assert data_referencia(dt.datetime(2026, 11, 5, 0, 0, tzinfo=dt.UTC), 20) == dt.date(2026, 11, 4)
+    # virada do ano: 1º/1 antes das 20h ainda é o ciclo de 31/12
+    assert data_referencia(dt.datetime(2027, 1, 1, 10, 0, tzinfo=dt.UTC), 20) == dt.date(2026, 12, 31)
+
+
+def test_data_referencia_converte_outro_fuso_para_utc():
     brasilia = dt.timezone(dt.timedelta(hours=-3))
-    verificar_horario(dt.datetime(2026, 11, 3, 17, 30, tzinfo=brasilia), 20)  # 20h30 UTC
-    with pytest.raises(Exception):
-        verificar_horario(dt.datetime(2026, 11, 3, 16, 59, tzinfo=brasilia), 20)  # 19h59 UTC
-    # 22h em Brasília já é o dia seguinte em UTC
-    assert data_coleta(dt.datetime(2026, 11, 3, 22, 0, tzinfo=brasilia)) == dt.date(2026, 11, 4)
+    # 17h30 em Brasília = 20h30 UTC: ciclo do próprio dia
+    assert data_referencia(dt.datetime(2026, 11, 4, 17, 30, tzinfo=brasilia), 20) == dt.date(2026, 11, 4)
+    # 16h59 em Brasília = 19h59 UTC: ainda o ciclo do dia anterior
+    assert data_referencia(dt.datetime(2026, 11, 4, 16, 59, tzinfo=brasilia), 20) == dt.date(2026, 11, 3)
+    # 22h em Brasília de 4/11 = 01h UTC de 5/11: ciclo de 4/11
+    assert data_referencia(dt.datetime(2026, 11, 4, 22, 0, tzinfo=brasilia), 20) == dt.date(2026, 11, 4)
+
+
+def test_data_referencia_hora_de_virada_invalida():
+    with pytest.raises(ValueError):
+        data_referencia(AGORA, 24)
+
+
+def test_janela_ptax_e_cdi_termina_na_data_de_referencia(tmp_path):
+    http = HttpFalso()
+    agora = dt.datetime(2026, 11, 5, 0, 59, tzinfo=dt.UTC)
+    assert executar(tmp_path, agora=agora, http=http) == SUCESSO
+    urls = {_fonte_da_url(u): u for u in http.urls}
+    assert "@dataInicial='10-26-2026'&@dataFinalCotacao='11-04-2026'" in urls["ptax"]
+    assert "dataInicial=26/10/2026&dataFinal=04/11/2026" in urls["cdi"]
+
+
+def test_arquivos_da_data_de_referencia_existentes_zero_requisicoes_no_dia_seguinte(tmp_path, caplog):
+    """A reserva das 06h30 depois de um principal bem-sucedido não requisita nada."""
+    caminhos = _caminhos("2026-11-04")
+    for nome, caminho in caminhos.items():
+        (tmp_path / caminho).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / caminho).write_bytes(b"original " + nome.encode())
+    antes = {n: _sha((tmp_path / c).read_bytes()) for n, c in caminhos.items()}
+    http = HttpFalso()
+    with caplog.at_level(logging.INFO):
+        codigo = executar(tmp_path, agora=dt.datetime(2026, 11, 5, 6, 30, tzinfo=dt.UTC), http=http)
+    assert codigo == SUCESSO
+    assert http.urls == []
+    assert {n: _sha((tmp_path / c).read_bytes()) for n, c in caminhos.items()} == antes
+    assert "requisicoes=0" in caplog.text
+
+
+def test_dia_seguinte_apos_a_virada_coleta_a_nova_data(tmp_path):
+    """Com 2026-11-04 completo, a execução às 20h30 de 5/11 grava só 2026-11-05."""
+    assert executar(tmp_path, agora=dt.datetime(2026, 11, 4, 20, 30, tzinfo=dt.UTC), http=HttpFalso()) == SUCESSO
+    http = HttpFalso()
+    assert executar(tmp_path, agora=dt.datetime(2026, 11, 5, 20, 30, tzinfo=dt.UTC), http=http) == SUCESSO
+    assert http.requisicoes == 4
+    assert _arquivos(tmp_path) == sorted(
+        list(_caminhos("2026-11-04").values()) + list(_caminhos("2026-11-05").values())
+    )
 
 
 def test_horario_sem_fuso_e_recusado(tmp_path):
@@ -118,7 +171,7 @@ def _pre_gravar(destino, nomes):
         caminho.write_bytes(b"original " + nome.encode())
 
 
-def test_arquivos_do_dia_existentes_zero_requisicoes(tmp_path, caplog):
+def test_arquivos_da_data_de_referencia_existentes_zero_requisicoes(tmp_path, caplog):
     _pre_gravar(tmp_path, CAMINHOS)
     antes = {n: _sha((tmp_path / c).read_bytes()) for n, c in CAMINHOS.items()}
     http = HttpFalso()

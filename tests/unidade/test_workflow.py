@@ -1,4 +1,4 @@
-"""Testes do workflow do Coletor diário (T-10; RF-01, RNF-08, RNF-13).
+"""Testes do workflow do Coletor diário (T-10, T-57; RF-01, RNF-08, RNF-13).
 
 Lê `.github/workflows/coleta.yml` com `yaml.safe_load`. No YAML 1.1 a chave
 `on:` vira o booleano True; os gatilhos são buscados pelos dois casos.
@@ -51,8 +51,9 @@ def _checkouts(passos):
     return [p for p in passos if str(p.get("uses", "")).startswith("actions/checkout@")]
 
 
-def test_cron_20h30_utc(gatilhos):
-    assert gatilhos["schedule"] == [{"cron": "30 20 * * *"}]
+def test_cron_principal_20h30_e_reserva_06h30_utc(gatilhos):
+    # ADR-007: principal às 20h30 UTC e reserva às 06h30 UTC, no mesmo ciclo do TCGCSV.
+    assert gatilhos["schedule"] == [{"cron": "30 20 * * *"}, {"cron": "30 6 * * *"}]
 
 
 def test_disparo_manual(gatilhos):

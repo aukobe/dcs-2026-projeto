@@ -38,6 +38,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-04 | T-26 | "prompt de implementação padrão" | plano aprovado com duas confirmações do autor: esquema da quarentena com `tabela`, `motivo`, `chave_raw` e `conteudo` (linha original em JSON), registrado no RF-07 do `specs/spec.md`; na divergência entre brutos, uma linha de quarentena por bruto. Criados `src/tcg/silver/quarentena.py` (funções puras: `validar` captura o erro do conversor e devolve `LinhaQuarentena` com motivo `campo: mensagem`, ou `None` no descarte do boletim intermediário; `deduplicar_por_data` mantém uma linha por data com a menor `chave_raw` quando os valores são iguais e manda todas as linhas da data para a quarentena com o motivo "valor divergente entre brutos" quando divergem; `contar_por_tabela` e `formatar_contagem` para o log da T-27) e `tests/unidade/test_quarentena.py` (12 passed na 1ª execução; suíte de unidade: 203 passed); gravação no MinIO e log ficam para a T-27; evidência em `docs/evidencias/T-26_quarentena.txt` |
 | 2026-11-04 | T-27 | "prompt de implementação padrão" | plano aprovado com uma decisão do autor: só teste de unidade com cliente MinIO falso em memória (o teste com MinIO real e bruto real fica para a T-28); `make silver` não foi executado. Criados `src/tcg/silver/construtor.py` (lista e lê pelo SDK só `raw/{tcgplayer,bcb_ptax,bcb_cdi}/group_id=24269/`; `preco_diario` com `data` da partição da chave e um Parquet por data, grão repetido no mesmo bruto vai à quarentena; `produto` com uma linha por `product_id`, do bruto mais recente; PTAX e CDI deduplicados por data; `colecao` de `config/colecao.toml`; bruto ilegível vai à quarentena; Escritor Parquet com DuckDB local em memória, sem httpfs, tipos do contrato e bytes enviados por `guarda_prefixo.gravar`; quarentena em `silver/quarentena/group_id=24269/quarentena.parquet`, gravada mesmo vazia; log com a contagem de quarentena e as linhas gravadas por tabela; nada é apagado), alvo `make silver` no `Makefile` (carrega o `.env` como o `sync`) e `tests/unidade/test_construtor_silver.py`. Nota da T-24 decidida: o construtor não usa `read_parquet`; quem lê a silver usa `hive_partitioning = false`, porque `group_id` já é coluna do contrato. 12 passed na 2ª execução (a 1ª falhou num teste porque o log era emitido na preparação do fixture e o `caplog.text` só mostra a fase de execução; o texto passou a ser guardado no fixture); suíte de unidade: 215 passed; evidência em `docs/evidencias/T-27_construtor_silver.txt` |
 | 2026-11-04 | T-28 | "prompt de implementação padrão" | plano aprovado com uma decisão do autor: o prompt pedia o MinIO descartável da T-19, mas a T-28 não tem a marca [contêiner]; o autor escolheu o bucket em memória (rede e contêiner ausentes), e o MinIO real fica para a T-34. Criado só `tests/integracao/test_coleta_silver.py`, sem mudança em `src/`: coletor com o cassete da T-20 (vcrpy `record_mode="none"`, 4 interações) → bruto gravado com o hash do manifesto → `construir_silver` num bucket em memória → teste de contrato (caminhos e prefixo `group_id=24269`, nomes e tipos de `CONTRATO`, `chave_raw` apontando para o bruto) e contagens do T-13 (281 produtos: 25 selados e 256 cartas; 446 preços com o `market_price` nulo do 637654; 6 PTAX Fechamento; 5 CDI; quarentena vazia); `socket.socket` e `getaddrinfo` bloqueados no módulo, com contador de tentativas em 0. 7 passed na 1ª execução; suíte completa: 236 passed; evidência em `docs/evidencias/T-28_coleta_silver.txt` |
+| 2026-11-04 | T-57 | texto completo em [Prompt da T-57 – Data de referência](#prompt-da-t-57--data-de-referência) | diagnóstico confirmado por `gh run view` das execuções #2 e #3 (atrasos de 4h17min e 4h29min, recusa por horário com código 2; evidência em `docs/evidencias/T-57_diagnostico.txt`); diffs do `specs/spec.md` (Definições, RF-01, RF-04, RNF-13), linha da T-57 e ADR-007 aprovados com um ajuste: Status "Aceito em 2026-11-04" (data local); decisões do autor aprovadas: plan.md atualizado (guarda, fluxo diário, cron, parâmetro, R-01, lista de ADRs), parâmetro `hora_minima_utc` renomeado para `hora_virada_ciclo_utc`, AGENTS.md esclarecido ("no máximo uma coleta por data de referência"); dois commits: primeiro os documentos, depois código, testes e workflow; `guarda.verificar_horario` e `ForaDoHorarioError` removidos, `data_referencia` criada; cron de reserva `30 6 * * *`; `make test`: 244 passed (evidência em `docs/evidencias/T-57_suite.txt`); nenhuma requisição ao TCGCSV ou ao BCB, `dados-raw` intocada |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -738,4 +739,41 @@ Somente o arquivo do ADR-004, em Markdown, com no máximo duas páginas. Mostre 
 [E] Extras
 Leia antes: AGENTS.md, docs/adr/ADR-001-bruto-dados-raw.md, specs/spec.md (RF-13, RNF-03, RNF-04, RNF-11) e specs/plan.md (seção de reprocessamento e exclusões).
 Ao final, proponha a mensagem de commit docs(T-22): ADR-004 camadas derivadas e reprocessamento [RF-13, RNF-03]. Pare ao final.
+```
+
+## Prompt da T-57 – Data de referência
+
+```text
+[C] Personagem
+Você é um engenheiro de dados que corrige um defeito em produção com disciplina SDD: primeiro especificação e decisão, depois código e teste.
+
+[R] Pedido
+As execuções agendadas coleta #2 e #3 do workflow rodaram com mais de 4 horas de atraso do GitHub, depois da meia-noite UTC, e o coletor recusou por horário (código 2), perdendo o dia 2026-11-04. Corrija com uma nova tarefa T-57, nesta ordem, parando para minha aprovação nos pontos indicados:
+1. Confirme a causa pelos logs (gh run view das execuções #2 e #3) e registre a saída em docs/evidencias/T-57_diagnostico.txt.
+2. Proponha o diff do specs/spec.md (Definições, RF-01, RF-04 e RNF-13): a "data da coleta" passa a ser a "data de referência" do ciclo do TCGCSV, ou seja, a coleta feita entre 20h UTC do dia D e 20h UTC do dia D+1 grava como data=D. A guarda de duplicidade por arquivo continua igual; a recusa por horário deixa de existir. Proponha também a linha da T-57 no specs/tasks.md e o ADR-007 (data de referência pelo ciclo do TCGCSV e agendamento redundante), com as seções dos ADRs anteriores, citando o atraso real do agendador como contexto e o risco de pegar o preço antigo se a coleta rodar logo depois das 20h UTC antes da atualização da fonte. PARE e espere minha aprovação.
+3. Depois de aprovado: altere a guarda e o coletor, atualize os testes (casos mínimos: 2026-11-05T00:59Z grava data=2026-11-04; 2026-11-04T20:30Z grava data=2026-11-04; 2026-11-05T19:59Z grava data=2026-11-04; 2026-11-05T20:00Z grava data=2026-11-05; arquivos do dia de referência já existentes não geram requisição) e a janela de PTAX e CDI calculada a partir da data de referência.
+4. No .github/workflows/coleta.yml, mantenha o cron 30 20 * * * e acrescente um segundo horário de reserva, 30 6 * * * (06h30 UTC), atualizando o teste do workflow.
+5. Rode a suíte completa e mostre a saída real.
+
+[E] Exemplos
+Commit esperado ao final: fix(T-57): data de referência pelo ciclo do TCGCSV e agendamento de reserva [RF-01, RF-04, RNF-13]
+
+[A] Ajustes
+- Não faça nenhuma requisição ao TCGCSV nem ao Banco Central nesta tarefa.
+- Não altere nada na branch dados-raw; não faça commit nem push.
+- Não leia o .env.
+- A coleta de 2026-11-03 já gravada continua válida e não deve ser tocada.
+- Escreva o ADR como decisão do autor, sem citar material de aula.
+
+[T] Tipo de saída
+Primeiro: diagnóstico, diffs da spec e do tasks.md e rascunho do ADR-007, e pare. Depois da aprovação: código, testes, workflow, evidências, specs/tasks.md (T-57 como [x]) e docs/prompts.md atualizados, e o resumo com a mensagem de commit.
+
+[E] Extras
+Leia antes: AGENTS.md, specs/spec.md, specs/plan.md, specs/tasks.md, docs/adr/ADR-001-bruto-dados-raw.md, src/tcg/coleta/ e .github/workflows/coleta.yml.
+```
+
+Resposta de aprovação do autor:
+
+```text
+Aprovo os diffs da spec, a linha da T-57 e o ADR-007, trocando a data do Status para "Aceito em 2026-11-04" (data local, como nos outros ADRs). Aprovo também as decisões 1, 2 e 3. Na decisão 4, faremos dois commits: primeiro os documentos (spec, tasks, plan, AGENTS e ADR-007), depois o código, os testes e o workflow. Pode seguir com as etapas 3 a 5 e, no resumo final, liste quais arquivos vão em cada um dos dois commits.
 ```

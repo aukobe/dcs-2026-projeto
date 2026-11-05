@@ -1,11 +1,15 @@
-# Coletor diário (T-10; specs/plan.md, seção 5; ADR-001).
+# Coletor diário (T-10, T-57; specs/plan.md, seção 5; ADR-001, ADR-007).
 # Grava o bruto do dia na branch dados-raw. Nenhum secret: só o GITHUB_TOKEN
 # com contents: write e TCG_USER_AGENT vindo de vars.
 name: coleta
 
 on:
+  # Principal às 20h30 UTC e reserva às 06h30 UTC (ADR-007). As duas caem no
+  # mesmo ciclo do TCGCSV e gravam a mesma data de referência; a reserva só
+  # requisita os arquivos que ainda faltarem.
   schedule:
     - cron: "30 20 * * *"
+    - cron: "30 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -52,7 +56,7 @@ jobs:
           echo "codigo=$?" >> "$GITHUB_OUTPUT"
 
       # Código 0 (tudo gravado ou já existente) ou 1 (falha parcial):
-      # publica o que foi gravado. Código 2 (recusa): nada a commitar.
+      # publica o que foi gravado. Código 2 (destino inexistente): nada a commitar.
       - name: publicar na dados-raw
         if: steps.coleta.outputs.codigo == '0' || steps.coleta.outputs.codigo == '1'
         working-directory: dados

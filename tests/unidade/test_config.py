@@ -46,7 +46,7 @@ def test_parametros_com_valores_do_plano():
     assert p.tentativas == 3
     assert p.esperas_s == (2, 4, 8)
     assert p.pausa_minima_ms == 100
-    assert p.hora_minima_utc == 20
+    assert p.hora_virada_ciclo_utc == 20
     assert p.limite_requisicoes_dia == 10000
     assert p.taxa_venda == 0.15
     assert p.preco_minimo_p1_usd == 1

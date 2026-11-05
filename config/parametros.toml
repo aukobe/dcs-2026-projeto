@@ -12,8 +12,9 @@ esperas_s = [2, 4, 8]
 # Regra da fonte (RES-03). Pausa mínima entre requisições ao TCGCSV.
 pausa_minima_ms = 100
 
-# Regra da fonte (RES-03). Coleta só depois desta hora UTC.
-hora_minima_utc = 20
+# Regra da fonte (RES-03; ADR-007). Hora UTC de virada do ciclo do TCGCSV: a coleta
+# entre esta hora do dia D e a mesma hora de D+1 grava como data=D.
+hora_virada_ciclo_utc = 20
 
 # Regra da fonte (RES-03). Limite de requisições por dia.
 limite_requisicoes_dia = 10000

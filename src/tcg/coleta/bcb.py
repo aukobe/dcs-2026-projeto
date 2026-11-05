@@ -2,8 +2,8 @@
 
 - PTAX: Olinda, `CotacaoMoedaPeriodo` com moeda USD (traz o tipo de boletim).
 - CDI: SGS, série 12 (% ao dia).
-- Janela de `janela_dias` dias corridos até a data da coleta, com os dois
-  extremos incluídos: D − (janela_dias − 1) até D.
+- Janela de `janela_dias` dias corridos até a data de referência da coleta
+  (ADR-007), com os dois extremos incluídos: D − (janela_dias − 1) até D.
 
 As URLs são montadas como texto completo (sem `params=`), para que as aspas e
 os prefixos `@`/`$` do OData cheguem ao servidor como na documentação do BCB.
@@ -34,12 +34,12 @@ class ClienteBcb:
         if self._janela_dias < 1:
             raise ValueError("janela_dias deve ser pelo menos 1")
 
-    def janela(self, data_coleta: dt.date) -> tuple[dt.date, dt.date]:
+    def janela(self, data_referencia: dt.date) -> tuple[dt.date, dt.date]:
         """(data inicial, data final) da janela, extremos incluídos."""
-        return data_coleta - dt.timedelta(days=self._janela_dias - 1), data_coleta
+        return data_referencia - dt.timedelta(days=self._janela_dias - 1), data_referencia
 
-    def url_ptax(self, data_coleta: dt.date) -> str:
-        inicio, fim = self.janela(data_coleta)
+    def url_ptax(self, data_referencia: dt.date) -> str:
+        inicio, fim = self.janela(data_referencia)
         return (
             f"{URL_PTAX}?@moeda='{MOEDA}'"
             f"&@dataInicial='{inicio:%m-%d-%Y}'"
@@ -47,16 +47,16 @@ class ClienteBcb:
             "&$format=json"
         )
 
-    def url_cdi(self, data_coleta: dt.date) -> str:
-        inicio, fim = self.janela(data_coleta)
+    def url_cdi(self, data_referencia: dt.date) -> str:
+        inicio, fim = self.janela(data_referencia)
         return (
             f"{URL_CDI}?formato=json"
             f"&dataInicial={inicio:%d/%m/%Y}"
             f"&dataFinal={fim:%d/%m/%Y}"
         )
 
-    def buscar_ptax(self, data_coleta: dt.date) -> bytes:
-        return self._http.get(self.url_ptax(data_coleta), fonte="bcb_ptax")
+    def buscar_ptax(self, data_referencia: dt.date) -> bytes:
+        return self._http.get(self.url_ptax(data_referencia), fonte="bcb_ptax")
 
-    def buscar_cdi(self, data_coleta: dt.date) -> bytes:
-        return self._http.get(self.url_cdi(data_coleta), fonte="bcb_cdi")
+    def buscar_cdi(self, data_referencia: dt.date) -> bytes:
+        return self._http.get(self.url_cdi(data_referencia), fonte="bcb_cdi")

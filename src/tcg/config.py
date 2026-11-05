@@ -35,7 +35,7 @@ class Parametros:
     tentativas: int
     esperas_s: tuple[float, ...]
     pausa_minima_ms: int
-    hora_minima_utc: int
+    hora_virada_ciclo_utc: int
     limite_requisicoes_dia: int
     taxa_venda: float
     preco_minimo_p1_usd: float
