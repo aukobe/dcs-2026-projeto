@@ -1,0 +1,13 @@
+$ git ls-tree -r --name-only origin/dados-raw | grep 2026-11-04
+raw/bcb_cdi/group_id=24269/data=2026-11-04/cdi.json
+raw/bcb_ptax/group_id=24269/data=2026-11-04/cotacao.json
+raw/tcgplayer/group_id=24269/data=2026-11-04/prices.json
+raw/tcgplayer/group_id=24269/data=2026-11-04/products.json
+
+$ git log --oneline -3 origin/dados-raw
+8a50cea dados(coleta): 2026-11-04 [RF-01]
+65c413a dados(coleta): 2026-11-03 [RF-01]
+e0a7b61 chore(T-08): branch órfã dados-raw [RF-02]
+
+$ gh run list --workflow coleta.yml --limit 1
+completed	success	coleta	coleta	main	workflow_dispatch	41949048376	41s	2026-11-05T01:31:03Z
