@@ -27,6 +27,7 @@ Documento derivado de `specs/spec.md` e `specs/plan.md`. Cada tarefa cabe num ú
 | T-11 | Criar a variável de repositório `TCG_USER_AGENT` (em `vars`, não em secret) no GitHub **[rede]** | RF-03, RNF-13 | `gh variable list` | `TCG_USER_AGENT` aparece na lista de variáveis do repositório | — | autor | [x] |
 | T-12 | Commitar o workflow na `main`, dispará-lo manualmente depois das 20h UTC e conferir a branch **[rede]** | RF-01, RF-02, RNF-12, RNF-13 | `gh workflow run coleta.yml && gh run watch && git fetch origin dados-raw && git ls-tree -r --name-only origin/dados-raw` | execução com sucesso no Actions; os quatro arquivos do dia em `raw/...` na `dados-raw`, com commit `dados(coleta): AAAA-MM-DD [RF-01]`; o log mostra a contagem de requisições | T-09, T-10, T-11 | autor | [x] |
 | T-13 | Validar as hipóteses da spec sobre o primeiro bruto: regra do `tipo_produto`, lista de raridades "Double Rare em diante", identificação e preço do booster box, preço dos selados, presença de `imageUrl` e `url`. Registrar os resultados e propor os ajustes da spec, para revisão do autor **[rede: só git fetch]** | RF-09, RF-16, RF-20, RF-23 | `git show origin/dados-raw:raw/tcgplayer/group_id=24269/data=$(git ls-tree --name-only origin/dados-raw:raw/tcgplayer/group_id=24269/ \| head -1 \| cut -d= -f2)/products.json \| python -m json.tool > /dev/null && test -s docs/evidencias/T-13_hipoteses.md` | `docs/evidencias/T-13_hipoteses.md` lista cada hipótese como confirmada ou refutada, com contagens tiradas do bruto | T-12 | agente | [x] |
+| T-57 | Correção: data de referência pelo ciclo do TCGCSV (das 20h UTC de D às 20h UTC de D+1 grava `data=D`) na guarda e no coletor, sem recusa por horário; guarda por arquivo inalterada; janela da PTAX e do CDI até a data de referência; cron de reserva `30 6 * * *` além de `30 20 * * *`; ADR-007 | RF-01, RF-04, RNF-13 | `pytest tests/unidade/test_coletor.py tests/unidade/test_clientes.py tests/unidade/test_workflow.py && make test` | 2026-11-05T00:59Z, 2026-11-04T20:30Z e 2026-11-05T19:59Z gravam `data=2026-11-04`; 2026-11-05T20:00Z grava `data=2026-11-05`; arquivos existentes do dia de referência geram zero requisições; o workflow tem os dois crons; diagnóstico em `docs/evidencias/T-57_diagnostico.txt` e suíte em `docs/evidencias/T-57_suite.txt` | T-06, T-10 | agente | [x] |
 
 ## Bloco B: armazenamento local
 
@@ -104,10 +105,10 @@ Nenhum. Todo RF e RNF de `specs/spec.md` é atendido por pelo menos uma tarefa (
 
 | Requisito | Tarefas |
 |---|---|
-| RF-01 | T-03, T-05, T-06, T-07, T-10, T-12, T-20 |
+| RF-01 | T-03, T-05, T-06, T-07, T-10, T-12, T-20, T-57 |
 | RF-02 | T-06, T-07, T-08, T-09, T-12, T-19 |
 | RF-03 | T-03, T-04, T-11 |
-| RF-04 | T-06 |
+| RF-04 | T-06, T-57 |
 | RF-05 | T-07, T-17, T-18, T-19, T-21 |
 | RF-06 | T-03, T-24, T-27 |
 | RF-07 | T-25, T-26, T-27 |
@@ -144,4 +145,4 @@ Nenhum. Todo RF e RNF de `specs/spec.md` é atendido por pelo menos uma tarefa (
 | RNF-10 | T-01, T-14, T-15, T-16, T-49, T-50 |
 | RNF-11 | T-27, T-34 |
 | RNF-12 | T-04, T-12, T-52 |
-| RNF-13 | T-10, T-11, T-12, T-49, T-52 |
+| RNF-13 | T-10, T-11, T-12, T-49, T-52, T-57 |

@@ -85,7 +85,7 @@ O Coletor diário não acessa o MinIO local e não precisa de credenciais do Min
 ```mermaid
 flowchart TB
   subgraph coletor["Coletor diário"]
-    guarda_coleta["Guarda de horário e duplicidade"]
+    guarda_coleta["Guarda de data de referência e duplicidade"]
     http["Cliente HTTP"]
     cli_tcg["Cliente TCGCSV"]
     cli_bcb["Cliente BCB"]
@@ -144,10 +144,10 @@ flowchart TB
 
 | Componente | Responsabilidade | Requisitos |
 |---|---|---|
-| Guarda de horário e duplicidade | Recusa a execução antes das 20h UTC. Para cada fonte, verifica se o arquivo do dia já existe na Branch dados-raw **antes** de qualquer requisição; se existir, pula a fonte e registra no log. | RF-04, RES-03 |
+| Guarda de data de referência e duplicidade | Calcula a data de referência pelo ciclo do TCGCSV (das 20h UTC de D às 20h UTC de D+1 grava `data=D`; spec, Definições; ADR-007), sem recusa por horário. Para cada fonte, verifica se o arquivo da data de referência já existe na Branch dados-raw **antes** de qualquer requisição; se existir, pula a fonte e registra no log. | RF-04, RES-03 |
 | Cliente HTTP | Sessão `requests` com o User-Agent de `TCG_USER_AGENT`, pausa mínima de 100 ms entre chamadas, repetição com espera crescente (até 3 repetições após a primeira chamada, com esperas de 2, 4 e 8 s) e contagem de requisições. | RF-03, RNF-12 |
 | Cliente TCGCSV | Busca `products` e `prices` do groupId 24269. | RF-01 |
-| Cliente BCB | Busca a PTAX (Olinda, `CotacaoMoedaPeriodo` com moeda USD, que traz o tipo de boletim) e o CDI (SGS, série 12) nos 10 dias corridos até a data da coleta. Endpoints exatos a confirmar na tarefa. | RF-01, RES-04, RES-05 |
+| Cliente BCB | Busca a PTAX (Olinda, `CotacaoMoedaPeriodo` com moeda USD, que traz o tipo de boletim) e o CDI (SGS, série 12) nos 10 dias corridos até a data de referência (ADR-007). Endpoints exatos a confirmar na tarefa. | RF-01, RES-04, RES-05 |
 | Gravador do bruto | Grava o corpo HTTP byte a byte em `raw/<fonte>/group_id=24269/data=AAAA-MM-DD/<arquivo>` no checkout da Branch dados-raw, em modo de criação exclusiva (falha se o arquivo existir). | RF-02, RES-08 |
 | Leitor da branch | `git fetch` da Branch dados-raw e leitura dos arquivos pelos blobs (`git ls-tree` e `git cat-file`), sem checkout e sem conversão de fim de linha. | RF-05 |
 | Gravador sem sobrescrita | Para cada arquivo: `stat_object` na chave; se existir, recusa e registra no log; se não, `put_object` e confere o hash com o do blob. | RF-05, RNF-03 |
@@ -164,16 +164,16 @@ flowchart TB
 
 ## 5. Fluxo diário
 
-1. **20h30 UTC**: o agendador do GitHub Actions dispara o Coletor diário. O autor também pode disparar manualmente (`workflow_dispatch`).
+1. **20h30 UTC** (principal) e **06h30 UTC** (reserva): o agendador do GitHub Actions dispara o Coletor diário. A reserva só requisita os arquivos que faltarem na data de referência. O autor também pode disparar manualmente (`workflow_dispatch`), de preferência a partir das 20h30 UTC (ADR-007).
 2. O job (Python 3.13) faz checkout da `main` (código) e da Branch dados-raw num diretório separado. Um grupo de concorrência impede duas execuções simultâneas.
-3. A Guarda de horário e duplicidade calcula a data da coleta (data UTC do momento) e recusa a execução se for antes das 20h UTC.
+3. A Guarda de data de referência e duplicidade calcula a data de referência: antes de 20h UTC, a data UTC do momento menos um dia; a partir de 20h UTC, a data UTC do momento. Não há recusa por horário.
 4. Para cada fonte (TCGCSV, PTAX, CDI), de forma independente:
    - se o arquivo do dia já existe na Branch dados-raw, a fonte é pulada e o log registra o motivo, sem nenhuma requisição;
    - senão, o Cliente TCGCSV ou o Cliente BCB faz a busca pelo Cliente HTTP, com User-Agent, pausa e repetição;
    - se a resposta vier com sucesso, o Gravador do bruto grava o corpo original; se todas as tentativas falharem, nada é gravado para aquela fonte e o erro vai para o log.
    - O TCGCSV grava `products.json` e `prices.json`; a fonte só conta como coletada no dia quando os dois existem. Como cada arquivo é verificado antes da requisição, o TCGCSV continua com no máximo uma coleta por dia.
 5. Se houver arquivo novo, o job faz commit com a mensagem `dados(coleta): AAAA-MM-DD [RF-01]` e push **só** na Branch dados-raw. O job tem só a permissão `contents: write` do `GITHUB_TOKEN`; não usa nenhum secret nem credencial do MinIO.
-6. Se alguma fonte falhou, o job termina com status de falha, para que o autor veja no histórico do Actions. A reexecução no mesmo dia (disparo manual antes de 23h59 UTC) busca só as fontes cujo arquivo do dia ainda não existe.
+6. Se alguma fonte falhou, o job termina com status de falha, para que o autor veja no histórico do Actions. A reexecução no mesmo ciclo (disparo manual antes das 20h UTC do dia seguinte) busca só as fontes cujo arquivo do dia ainda não existe.
 7. **No Codespace**, o autor roda `make up`: o MinIO local sobe e o healthcheck confirma que está pronto.
 8. `make sync`: o Sincronizador lê a Branch dados-raw e envia ao bucket `tcg` cada arquivo ainda ausente, com a mesma chave; chaves existentes são recusadas e registradas no log.
 9. `make silver`: o Construtor da silver lê todo o bruto da DRI, valida, grava as cinco tabelas e a quarentena e registra a contagem de quarentena por tabela. PTAX e CDI repetidos em janelas de dias diferentes viram uma única linha; valores divergentes vão para a quarentena.
@@ -185,7 +185,7 @@ flowchart TB
 
 | Escolha | Alternativas consideradas (motivo do descarte) | Requisito/restrição | ADR |
 |---|---|---|---|
-| Coletor diário no GitHub Actions, cron `30 20 * * *` mais `workflow_dispatch`, Python 3.13 | cron dentro do Codespace (hiberna quando parado); agendador no computador do autor (depende da máquina ligada); cron em serviço externo pago (RES-02) | RF-01, RF-04, RNF-13, RES-03, RES-07 | ADR-001 |
+| Coletor diário no GitHub Actions, cron `30 20 * * *` (principal) e `30 6 * * *` (reserva) mais `workflow_dispatch`, Python 3.13 | cron dentro do Codespace (hiberna quando parado); agendador no computador do autor (depende da máquina ligada); cron em serviço externo pago (RES-02) | RF-01, RF-04, RNF-13, RES-03, RES-07 | ADR-001, ADR-007 |
 | Bruto gravado como arquivo na Branch dados-raw, no caminho idêntico à chave, commit e push só nessa branch | MinIO público pago no Railway (RES-02; exigiria credencial no Actions); artifacts do Actions (expiram, sem chave fixa); bruto na `main` (mistura dados e código) | RF-01, RF-02, RNF-08, RNF-09, RES-06, RES-08 | ADR-001 |
 | `.gitattributes` com `* -text` na Branch dados-raw | confiar na configuração padrão do Git (pode converter fim de linha); compactar os arquivos (deixa de ser a resposta original) | RF-02, RES-08 | ADR-001 |
 | Fontes verificadas e gravadas de forma independente; checagem de existência antes de qualquer requisição | coleta tudo-ou-nada (perde PTAX e CDI quando só o TCGCSV falha); checar só na hora de gravar (o RF-04 exige que nenhuma requisição seja enviada) | RF-01, RF-04, RES-03, OBJ-01 | ADR-001 |
@@ -237,7 +237,7 @@ flowchart TB
 | `tentativas` | 3 | RF-03 |
 | `esperas_s` | [2, 4, 8] | RF-03 |
 | `pausa_minima_ms` | 100 | RF-03, RES-03 |
-| `hora_minima_utc` | 20 | RF-04, RES-03 |
+| `hora_virada_ciclo_utc` | 20 | RF-01, RF-04, RES-03 |
 | `limite_requisicoes_dia` | 10000 | RNF-12 |
 | `taxa_venda` | 0.15 | RF-24 |
 | `preco_minimo_p1_usd` / `preco_minimo_p5_usd` | 1 / 5 | RF-14, RF-15, RF-19 |
@@ -247,7 +247,7 @@ Variáveis de ambiente (nomes do `.env.example`, valores só no `.env`): `MINIO_
 ## 9. Estrutura de pastas
 
 ```text
-.github/workflows/coleta.yml      # Coletor diário (cron 20h30 UTC + workflow_dispatch)
+.github/workflows/coleta.yml      # Coletor diário (cron 20h30 e 06h30 UTC + workflow_dispatch)
 config/
   colecao.toml
   parametros.toml
@@ -259,7 +259,7 @@ src/tcg/
   log.py                          # configuração do logging
   coleta/
     __main__.py                   # ponto de entrada do Coletor diário
-    guarda.py                     # Guarda de horário e duplicidade
+    guarda.py                     # Guarda de data de referência e duplicidade
     http.py                       # Cliente HTTP
     tcgcsv.py                     # Cliente TCGCSV
     bcb.py                        # Cliente BCB
@@ -313,7 +313,7 @@ Sequência a partir de um clone limpo (RNF-10): copiar `.env.example` para `.env
 ## 11. Logs
 
 - Módulo `logging` padrão, saída padrão, formato com data e hora UTC, nível e componente.
-- Registram: cada requisição (fonte, status, tentativa, espera), recusas por horário e por arquivo existente, recusas de sobrescrita no Sincronizador, contagem de quarentena por tabela, contagem de linhas gravadas por tabela e chaves apagadas pelo reprocessamento.
+- Registram: cada requisição (fonte, status, tentativa, espera), data de referência calculada, recusas por arquivo existente, recusas de sobrescrita no Sincronizador, contagem de quarentena por tabela, contagem de linhas gravadas por tabela e chaves apagadas pelo reprocessamento.
 - Nunca registram valor de credencial, cabeçalho de autenticação nem URL com credencial. Um teste confere que nenhum valor das variáveis `MINIO_ACCESS_KEY` e `MINIO_SECRET_KEY` aparece na saída (RNF-08).
 
 ## 12. ADRs previstos
@@ -328,12 +328,13 @@ Serão escritos na etapa de validação; aqui só número e título.
 | ADR-004 | Camadas derivadas e reprocessamento |
 | ADR-005 | Regra da carteira propria |
 | ADR-006 | Fallback do selado |
+| ADR-007 | Data de referência pelo ciclo do TCGCSV e agendamento redundante |
 
 ## 13. Riscos técnicos iniciais
 
 | # | Risco | Efeito | Mitigação |
 |---|---|---|---|
-| R-01 | O agendador do GitHub Actions atrasa ou descarta execuções em horário de carga. | Dia sem coleta; se o atraso passar da meia-noite UTC, a data da coleta muda e o dia anterior se perde. | Aceito como risco. Disparo manual (`workflow_dispatch`) no mesmo dia, antes de 23h59 UTC; documentar no README. |
+| R-01 | O agendador do GitHub Actions atrasa ou descarta execuções em horário de carga. | Dia sem coleta se o atraso passar das 20h UTC do dia seguinte (fim do ciclo). | Data de referência pelo ciclo do TCGCSV e cron de reserva às 06h30 UTC (ADR-007); disparo manual dentro do ciclo; documentar no README. |
 | R-02 | Workflows agendados rodam só a partir da branch padrão e são desativados após 60 dias sem atividade no repositório. | Coleta para sem aviso. | Arquivo do workflow fica na `main`; o prazo (12/12/2026) é menor que 60 dias de inatividade; conferir o histórico de execuções. |
 | R-03 | Conversão de fim de linha ou de codificação altera o bruto. | Hash do bruto diferente da resposta original (RF-02). | `.gitattributes` com `* -text` na Branch dados-raw; Sincronizador lê os blobs com `git cat-file`; teste de hash. |
 | R-04 | Duas execuções simultâneas fazem push na Branch dados-raw. | Conflito de push ou arquivo duplicado. | Grupo de concorrência no workflow; criação exclusiva de arquivo. |
@@ -361,6 +362,6 @@ Serão escritos na etapa de validação; aqui só número e título.
 |---|---|---|
 | `specs/spec.md`, RNF-03 | Trocar "o código não tem chamadas de exclusão" pela exclusão restrita à Guarda de prefixo, com teste de recusa. | Aplicado nesta etapa. |
 | `AGENTS.md`, comandos proibidos | `make reprocessar`, executado pelo autor, é a única exceção à proibição de exclusões; o agente continua proibido de executar qualquer exclusão. | Aplicado nesta etapa. |
-| `README.md` | Documentar o disparo manual antes de 23h59 UTC como mitigação do atraso do cron (R-01) e os passos de "Como rodar". | Tarefa futura. |
+| `README.md` | Documentar o disparo manual dentro do ciclo (antes das 20h UTC do dia seguinte) e o cron de reserva como mitigação do atraso do cron (R-01, ADR-007) e os passos de "Como rodar". | Tarefa futura. |
 | `AGENTS.md`, "Arquitetura prevista" | Trocar "a confirmar no plan.md" por referência a este plano. | Tarefa futura, se o autor quiser. |
 | `docs/prompts.md` | Registrar o prompt desta etapa e o resultado da revisão. | Pelo autor. |

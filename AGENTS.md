@@ -34,7 +34,7 @@ Tudo nesta seção está **a confirmar no plan.md**.
 - Nenhum objeto em `tcg/raw/` é sobrescrito ou apagado; antes de gravar, confira se a chave já existe e, se existir, aborte com erro.
 - A camada raw guarda a resposta original da fonte, byte a byte, sem transformação.
 - A silver é derivada exclusivamente da raw da DRI; a gold é derivada da silver da DRI e das silvers de outras coleções disponíveis, lidas somente para leitura. Ambas podem ser reconstruídas, mas só dentro dos prefixos acima.
-- TCGCSV: toda requisição envia o User-Agent próprio definido em `TCG_USER_AGENT`; pausa mínima de 100 ms entre chamadas; no máximo uma coleta por dia, sempre depois das 20h UTC.
+- TCGCSV: toda requisição envia o User-Agent próprio definido em `TCG_USER_AGENT`; pausa mínima de 100 ms entre chamadas; no máximo uma coleta por data de referência (ADR-007), sempre depois das 20h UTC dessa data.
 - Dia sem coleta é registrado na tabela "Dias sem coleta" do README.md, com data e motivo; não se inventam nem se copiam dados para preencher lacunas.
 
 ## Comandos permitidos e proibidos

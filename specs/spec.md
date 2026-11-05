@@ -6,7 +6,7 @@ Requisitos derivados de `docs/00_persona.md` e `docs/01_objetivos_negocio.md`. C
 
 - **Item**: par produto × acabamento (`product_id`, `acabamento`). É o grão de todo o projeto. Uma carta em Holofoil e a mesma carta em Reverse Holofoil são itens distintos, inclusive na cesta_raras, na P5 e no "um exemplar de cada carta" da P3 e da P4.
 - **Primeiro dia**: menor `data` com bruto do TCGCSV da coleção. **Último dia**: maior `data` com esse bruto.
-- **Data da coleta**: data UTC do momento da coleta.
+- **Data de referência** (ciclo do TCGCSV): a fonte atualiza o preço por volta das 20h UTC. O ciclo da data D vai de 20h00 UTC de D (inclusive) a 20h00 UTC de D+1 (exclusive), e toda coleta feita nesse intervalo grava como `data=D`. É a `data` das chaves do bruto e de todas as camadas. Exemplos: 2026-11-04T20:30Z e 2026-11-05T19:59Z → 2026-11-04; 2026-11-05T20:00Z → 2026-11-05 (ADR-007).
 - **PTAX aplicada no dia D**: a cotação de boletim `Fechamento` com a maior `data` ≤ D. Nunca uma de data posterior.
 - **tipo_produto** (validado no T-13 (docs/evidencias/T-13_hipoteses.md)): produto sem número de carta é `selado`; os demais são `carta`. Exceção: raridade "Code Card" é sempre `carta`.
 - **Raridades "Double Rare em diante"** (validado no T-13 (docs/evidencias/T-13_hipoteses.md)), em ordem: Double Rare, Ultra Rare, Illustration Rare, Special Illustration Rare, Hyper Rare. Uma raridade que a fonte trouxer fora da lista entra como pendência.
@@ -51,13 +51,14 @@ Os nomes e tipos de colunas abaixo são obrigatórios. Colunas extras são permi
 
 ## Requisitos funcionais
 
-### RF-01: coleta diária de TCGCSV, PTAX e CDI
-Uma vez por dia, depois das 20h UTC, a coleta busca `products` e `prices` do groupId 24269 no TCGCSV e uma janela recente da PTAX e do CDI. A janela existe porque o CDI de um dia útil só é publicado na manhã seguinte e para que um dia útil não coletado não fique sem PTAX. Tamanho da janela: 10 dias corridos para os dois, parâmetro configurável (hipótese: validação pendente). As quatro respostas são gravadas inteiras.
+### RF-01: coleta de TCGCSV, PTAX e CDI por data de referência
+Uma vez por ciclo do TCGCSV (Definições: data de referência), a coleta busca `products` e `prices` do groupId 24269 no TCGCSV e uma janela recente da PTAX e do CDI, que termina na data de referência. A janela existe porque o CDI de um dia útil só é publicado na manhã seguinte e para que um dia útil não coletado não fique sem PTAX. Tamanho da janela: 10 dias corridos para os dois, parâmetro configurável (hipótese: validação pendente). As quatro respostas são gravadas inteiras.
 - Origem: OBJ-01, DRV-01, DRV-03, RES-01, RES-03, RES-05
 - Critério de aceite:
-  - Dado um dia sem bruto gravado e o relógio depois das 20h UTC
-  - Quando a coleta for executada
-  - Então existem as quatro chaves do dia no bruto, e `cotacao.json` e `cdi.json` correspondem à consulta dos 10 dias corridos até a data da coleta
+  - Dado uma data de referência sem bruto gravado
+  - Quando a coleta for executada em qualquer momento do ciclo dessa data
+  - Então existem as quatro chaves com `data` igual à data de referência, e `cotacao.json` e `cdi.json` correspondem à consulta dos 10 dias corridos até a data de referência
+  - E, dado o relógio em 2026-11-05T00:59Z, as chaves gravadas têm `data=2026-11-04`
 
 ### RF-02: grava a resposta do dia no bruto sem sobrescrever
 A resposta original de cada fonte é gravada sem alteração na chave do dia da coleção.
@@ -77,12 +78,13 @@ Falhas transitórias são repetidas com espera crescente. Tentativas e esperas s
   - Então toda requisição leva o User-Agent de `TCG_USER_AGENT`, o intervalo entre chamadas é de pelo menos 100 ms, as esperas entre tentativas crescem (2, 4 s) e a terceira tentativa grava o bruto
   - E, se todas as tentativas falharem, nada é gravado e o erro aparece no log
 
-### RF-04: recusa coleta fora da janela permitida
+### RF-04: recusa coleta repetida no mesmo ciclo
+Não há recusa por horário: todo momento pertence a um ciclo. A guarda é por arquivo e é verificada antes de qualquer requisição.
 - Origem: RES-03
 - Critério de aceite:
-  - Dado o relógio às 19h59 UTC, ou um bruto do TCGCSV já gravado no dia
+  - Dado um arquivo do bruto já gravado para a data de referência do ciclo
   - Quando a coleta for executada
-  - Então nenhuma requisição é enviada ao TCGCSV e o motivo aparece no log
+  - Então nenhuma requisição é enviada para esse arquivo e o motivo aparece no log; com os quatro arquivos gravados, nenhuma requisição é enviada
 
 ### RF-05: sincroniza o bruto para o MinIO local sem sobrescrever
 Um comando local copia os arquivos da branch `dados-raw` para o MinIO local.
@@ -379,13 +381,13 @@ O painel lê `gold_turma/carteira/` de todas as coleções disponíveis, somente
   - Então há no máximo 10.000 requisições ao TCGCSV
 
 ### RNF-13: execução agendada
-A coleta roda todo dia depois das 20h UTC sem intervenção manual, com credenciais só em variáveis de ambiente e secrets.
+A coleta roda em todo ciclo do TCGCSV sem intervenção manual, com credenciais só em variáveis de ambiente e secrets. Há dois horários agendados: o principal às 20h30 UTC e a reserva às 06h30 UTC. A reserva só faz requisição para os arquivos que ainda faltam (ADR-007).
 - Atributo: operabilidade
 - Origem: OBJ-01, DRV-01, RES-06, RES-07
 - Critério de aceite:
   - Dado o período entre o primeiro e o último dia de coleta
   - Quando o histórico de execuções do agendador for consultado
-  - Então há uma execução por dia, depois das 20h UTC, e cada dia sem execução bem-sucedida aparece na tabela "Dias sem coleta" do README, com o motivo
+  - Então cada data de referência tem ao menos uma execução bem-sucedida dentro do seu ciclo, e cada data sem bruto aparece na tabela "Dias sem coleta" do README, com o motivo
 
 ## Fora do escopo
 

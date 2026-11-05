@@ -1,0 +1,136 @@
+# T-57: diagnóstico das execuções agendadas #2 e #3 do workflow coleta
+# Coletado em 2026-11-05 com gh (somente leitura). Nenhuma requisição ao TCGCSV ou ao BCB.
+
+$ gh run list --workflow coleta.yml --limit 10 --json number,databaseId,event,conclusion,createdAt,startedAt,updatedAt
+[
+    {
+        "conclusion": "failure",
+        "createdAt": "2026-11-05T00:59:30Z",
+        "databaseId": 41945358536,
+        "event": "schedule",
+        "number": 3,
+        "startedAt": "2026-11-05T00:59:30Z",
+        "updatedAt": "2026-11-05T00:59:53Z"
+    },
+    {
+        "conclusion": "failure",
+        "createdAt": "2026-11-04T00:46:59Z",
+        "databaseId": 41749386966,
+        "event": "schedule",
+        "number": 2,
+        "startedAt": "2026-11-04T00:46:59Z",
+        "updatedAt": "2026-11-04T00:47:34Z"
+    },
+    {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T20:44:07Z",
+        "databaseId": 41715282582,
+        "event": "workflow_dispatch",
+        "number": 1,
+        "startedAt": "2026-11-03T20:44:07Z",
+        "updatedAt": "2026-11-03T20:45:03Z"
+    }
+]
+
+$ gh run view 41749386966
+
+X main coleta · 41749386966
+Triggered via schedule about 1 day ago
+
+JOBS
+X coletar in 31s (ID 126310386875)
+  ✓ Set up job
+  ✓ checkout do código (main)
+  ✓ checkout do bruto (dados-raw)
+  ✓ Python 3.13
+  ✓ instalar o pacote
+  ✓ coletar
+  - publicar na dados-raw
+  X resultado da coleta
+  - Post Python 3.13
+  ✓ Post checkout do bruto (dados-raw)
+  ✓ Post checkout do código (main)
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+coletar: .github#2
+
+X Process completed with exit code 2.
+coletar: .github#18
+
+
+To see what failed, try: gh run view 41749386966 --log-failed
+View this run on GitHub: https://github.com/aukobe/dcs-2026-projeto/actions/runs/41749386966
+$ gh run view 41749386966 --log | grep -E 'tcg\.coleta|código de saída|exit code'
+coletar	UNKNOWN STEP	2026-11-04T00:47:29.6759245Z python -m tcg.coleta --destino ../dados
+coletar	UNKNOWN STEP	2026-11-04T00:47:29.9429847Z 2026-11-04T00:47:29Z ERROR tcg.coleta.guarda: coleta recusada: 2026-11-04T00:47:29Z é antes de 20h UTC; nenhuma requisição enviada
+coletar	UNKNOWN STEP	2026-11-04T00:47:29.9694525Z ##[group]Run echo "código de saída do coletor: ${CODIGO:-ausente}"
+coletar	UNKNOWN STEP	2026-11-04T00:47:29.9695048Z echo "código de saída do coletor: ${CODIGO:-ausente}"
+coletar	UNKNOWN STEP	2026-11-04T00:47:29.9765345Z código de saída do coletor: 2
+coletar	UNKNOWN STEP	2026-11-04T00:47:29.9778621Z ##[error]Process completed with exit code 2.
+
+$ gh run view 41945358536
+
+X main coleta · 41945358536
+Triggered via schedule about 23 minutes ago
+
+JOBS
+X coletar in 20s (ID 126976107158)
+  ✓ Set up job
+  ✓ checkout do código (main)
+  ✓ checkout do bruto (dados-raw)
+  ✓ Python 3.13
+  ✓ instalar o pacote
+  ✓ coletar
+  - publicar na dados-raw
+  X resultado da coleta
+  - Post Python 3.13
+  ✓ Post checkout do bruto (dados-raw)
+  ✓ Post checkout do código (main)
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+coletar: .github#2
+
+X Process completed with exit code 2.
+coletar: .github#18
+
+
+To see what failed, try: gh run view 41945358536 --log-failed
+View this run on GitHub: https://github.com/aukobe/dcs-2026-projeto/actions/runs/41945358536
+$ gh run view 41945358536 --log | grep -E 'tcg\.coleta|código de saída|exit code'
+coletar	coletar	2026-11-05T00:59:50.5168453Z python -m tcg.coleta --destino ../dados
+coletar	coletar	2026-11-05T00:59:50.6873853Z 2026-11-05T00:59:50Z ERROR tcg.coleta.guarda: coleta recusada: 2026-11-05T00:59:50Z é antes de 20h UTC; nenhuma requisição enviada
+coletar	resultado da coleta	﻿2026-11-05T00:59:50.7042887Z ##[group]Run echo "código de saída do coletor: ${CODIGO:-ausente}"
+coletar	resultado da coleta	2026-11-05T00:59:50.7043196Z echo "código de saída do coletor: ${CODIGO:-ausente}"
+coletar	resultado da coleta	2026-11-05T00:59:50.7095938Z código de saída do coletor: 2
+coletar	resultado da coleta	2026-11-05T00:59:50.7104141Z ##[error]Process completed with exit code 2.
+
+$ git fetch origin dados-raw && git ls-tree -r --name-only origin/dados-raw
+.gitattributes
+README.md
+raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json
+raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json
+raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json
+raw/tcgplayer/group_id=24269/data=2026-11-03/products.json
+
+$ git log --format="%h %ad %s" --date=iso-strict origin/dados-raw
+65c413a 2026-11-03T20:44:53Z dados(coleta): 2026-11-03 [RF-01]
+e0a7b61 2026-11-03T19:14:21Z chore(T-08): branch órfã dados-raw [RF-02]
+
+# Análise
+# - Cron agendado: "30 20 * * *" (20h30 UTC).
+# - Execução #2 (schedule): previsto 2026-11-03T20:30Z, início real 2026-11-04T00:46:59Z
+#   (atraso de 4h17min). O coletor calculou a data como 2026-11-04 (data UTC do momento)
+#   e recusou por horário (00:47 < 20h UTC): código 2, nenhuma requisição, nada publicado.
+#   O dia 2026-11-03 já tinha sido gravado pelo disparo manual #1 (20:44Z); nada se perdeu.
+# - Execução #3 (schedule): previsto 2026-11-04T20:30Z, início real 2026-11-05T00:59:30Z
+#   (atraso de 4h29min). Mesma recusa (00:59 < 20h UTC), código 2. Resultado: a
+#   dados-raw não tem nenhum arquivo de data=2026-11-04.
+# - Causa: o agendador do GitHub Actions atrasou mais de 4 h, passando da meia-noite UTC;
+#   a regra "data da coleta = data UTC do momento" somada à recusa antes das 20h UTC
+#   (guarda.verificar_horario) faz qualquer atraso que atravesse a meia-noite perder o dia.
+#   É o risco R-01 do plan.md / ADR-001 materializado duas vezes seguidas.
+# - Fora da causa: o aviso de Node.js 20 nas actions é só um aviso e não afeta o resultado.
