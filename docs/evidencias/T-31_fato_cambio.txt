@@ -1,0 +1,19 @@
+$ .venv/bin/python -m pytest tests/unidade/test_fato_cambio.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 6 items
+
+tests/unidade/test_fato_cambio.py::test_fim_de_semana_usa_ptax_de_sexta_e_cdi_zero PASSED [ 16%]
+tests/unidade/test_fato_cambio.py::test_dia_util_tem_ptax_e_cdi_do_proprio_dia PASSED [ 33%]
+tests/unidade/test_fato_cambio.py::test_feriado_nunca_usa_ptax_posterior PASSED [ 50%]
+tests/unidade/test_fato_cambio.py::test_um_dia_de_calendario_por_linha PASSED [ 66%]
+tests/unidade/test_fato_cambio.py::test_dia_antes_do_primeiro_boletim PASSED [ 83%]
+tests/unidade/test_fato_cambio.py::test_dia_util_sem_cdi_fica_pendente PASSED [100%]
+
+============================== 6 passed in 0.63s ===============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+235 passed in 5.56s

@@ -8,7 +8,11 @@ gravação pela Guarda de prefixo é do Construtor da gold, T-32).
 (MinIO). Toda leitura da silver usa `hive_partitioning = false`: `group_id`
 já é coluna do contrato, e a coluna derivada do caminho a duplicaria (nota da
 T-24, ADR-003). As silvers de todas as coleções são lidas por curinga, com
-`union_by_name = true`; câmbio vem só da silver da DRI.
+`union_by_name = true`; câmbio e CDI vêm só da silver da DRI.
+
+`fato_cambio_diario` (T-31, RF-12) tem um dia de calendário por linha, os
+mesmos de `dim_data`, com a PTAX aplicada, a `data_ptax` do boletim, o CDI do
+dia (0 sem CDI na data) e `cdi_pendente` (dia útil sem CDI).
 """
 
 from __future__ import annotations
@@ -17,8 +21,16 @@ from importlib import resources
 
 import duckdb
 
-# Ordem de criação: as dimensões de data e acabamento derivam do fato.
-TABELAS = ("dim_colecao", "dim_produto", "fato_preco_diario", "dim_data", "dim_acabamento")
+# Ordem de criação: as dimensões de data e acabamento derivam do fato de preço,
+# e o fato de câmbio deriva de dim_data.
+TABELAS = (
+    "dim_colecao",
+    "dim_produto",
+    "fato_preco_diario",
+    "dim_data",
+    "dim_acabamento",
+    "fato_cambio_diario",
+)
 
 
 def _literal(valor: str) -> str:
@@ -33,7 +45,7 @@ def ler_sql(tabela: str, base: str) -> str:
 
 
 def montar_estrela(con: duckdb.DuckDBPyConnection, base: str) -> tuple[str, ...]:
-    """Cria na conexão as dimensões e o `fato_preco_diario` a partir da silver em `base`."""
+    """Cria na conexão as dimensões e os fatos de preço e câmbio a partir da silver em `base`."""
     for tabela in TABELAS:
         con.execute(f"CREATE OR REPLACE TABLE {tabela} AS {ler_sql(tabela, base)}")
     return TABELAS

@@ -81,6 +81,9 @@ def lake(tmp_path):
         (D(2026, 10, 9), 4.9990, 5.0000, dt.datetime(2026, 10, 9, 13, 5), "Fechamento", "raw/bcb_ptax/a"),
         (D(2026, 10, 13), 5.4990, 5.5000, dt.datetime(2026, 10, 13, 13, 5), "Fechamento", "raw/bcb_ptax/b"),
     ])
+    # CDI vazio: a silver sempre grava as cinco tabelas, e o fato_cambio_diario (T-31) lê esta.
+    _gravar(con, s / "cdi_diario" / f"group_id={DRI}", "cdi.parquet",
+            "data DATE, taxa_dia DOUBLE, chave_raw VARCHAR", [])
     con.close()
     estrela = duckdb.connect()
     montar_estrela(estrela, str(tmp_path))
@@ -145,7 +148,9 @@ def test_group_id_vem_da_coluna_sem_hive(lake):
 
 
 def test_dimensoes_e_grao(lake):
-    assert set(TABELAS) == {"dim_produto", "dim_colecao", "dim_data", "dim_acabamento", "fato_preco_diario"}
+    assert set(TABELAS) == {
+        "dim_produto", "dim_colecao", "dim_data", "dim_acabamento", "fato_preco_diario", "fato_cambio_diario",
+    }
     datas = [r[0] for r in lake.execute("SELECT data FROM dim_data ORDER BY data").fetchall()]
     assert datas == [D(2026, 10, 8) + dt.timedelta(days=i) for i in range(6)]  # 08/10 a 13/10, com o 09/10 sem preço
     fds = lake.execute("SELECT data FROM dim_data WHERE fim_de_semana ORDER BY data").fetchall()
