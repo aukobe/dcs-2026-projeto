@@ -6,7 +6,7 @@
 WITH preco AS (
     SELECT data, product_id, group_id, acabamento,
            market_price, low_price, mid_price, high_price, chave_raw
-    FROM read_parquet({base} || '/silver/preco_diario/*/*/*.parquet',
+    FROM read_parquet({arquivos_preco_diario},
                       union_by_name = true, hive_partitioning = false)
 ),
 cambio AS (

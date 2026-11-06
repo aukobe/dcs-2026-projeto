@@ -2,7 +2,7 @@ PYTHON ?= .venv/bin/python
 # python3.13 do PATH; se não houver, o caminho fixo do Codespace
 PYTHON313 ?= $(shell command -v python3.13 2>/dev/null || echo /usr/local/python/3.13.8/bin/python3.13)
 
-.PHONY: setup test up sync silver
+.PHONY: setup test up sync silver gold
 
 setup:
 	@test -x "$(PYTHON313)" || { echo "python3.13 não encontrado no PATH nem em /usr/local/python/3.13.8/bin" >&2; exit 1; }
@@ -29,3 +29,9 @@ sync:
 silver:
 	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
 	@set -a && . ./.env && set +a && $(PYTHON) -m tcg.silver.construtor
+
+# Silvers (DRI e outras coleções, só leitura) → gold/group_id=24269/, pela Guarda de prefixo (RF-10, RF-22).
+# O .env é carregado só no ambiente da receita; nenhum valor é impresso (RNF-08).
+gold:
+	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
+	@set -a && . ./.env && set +a && $(PYTHON) -m tcg.gold.construtor

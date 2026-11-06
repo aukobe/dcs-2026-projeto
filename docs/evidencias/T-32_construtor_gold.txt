@@ -1,0 +1,21 @@
+$ .venv/bin/python -m pytest tests/integracao/test_construtor_gold.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 5 items
+
+tests/integracao/test_construtor_gold.py::test_gold_so_no_prefixo_da_dri PASSED [ 20%]
+tests/integracao/test_construtor_gold.py::test_dim_colecao_e_fatos PASSED [ 40%]
+tests/integracao/test_construtor_gold.py::test_silver_fora_do_contrato_ignorada_com_aviso PASSED [ 60%]
+tests/integracao/test_construtor_gold.py::test_sem_outras_colecoes_gera_so_a_dri PASSED [ 80%]
+tests/integracao/test_construtor_gold.py::test_silver_da_dri_ausente_aborta PASSED [100%]
+
+============================== 5 passed in 4.51s ===============================
+
+$ .venv/bin/python -m pytest -q
+261 passed in 15.27s
+
+$ docker ps -a --filter label=tcg.teste=T-19 -q | wc -l
+0
