@@ -1,0 +1,12 @@
+$ make gold
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: DuckDB conectado ao MinIO: endpoint=localhost:9000 bucket=tcg secure=False url_style=path
+2026-11-06T16:38:59Z INFO tcg.lake.cliente: cliente MinIO: endpoint=localhost:9000 bucket=tcg secure=False
+2026-11-06T16:38:59Z INFO __main__: nenhuma outra coleção disponível: gold só com a DRI (RF-22)
+2026-11-06T16:38:59Z INFO __main__: coleções na gold: 24269
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_colecao.parquet
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_produto.parquet
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/fato_preco_diario.parquet
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_data.parquet
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_acabamento.parquet
+2026-11-06T16:38:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/fato_cambio_diario.parquet
+2026-11-06T16:38:59Z INFO __main__: linhas gravadas por tabela: dim_colecao: 1, dim_produto: 281, fato_preco_diario: 1338, dim_data: 3, dim_acabamento: 3, fato_cambio_diario: 3
