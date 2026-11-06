@@ -1,0 +1,16 @@
+$ .venv/bin/python -m pytest tests/unidade/test_estrela.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 6 items
+
+tests/unidade/test_estrela.py::test_conversao_sabado_usa_ptax_de_sexta PASSED [ 16%]
+tests/unidade/test_estrela.py::test_nunca_usa_ptax_posterior PASSED      [ 33%]
+tests/unidade/test_estrela.py::test_preco_anterior_ao_primeiro_boletim_fica_com_conversao_nula PASSED [ 50%]
+tests/unidade/test_estrela.py::test_dim_colecao_tem_as_duas_colecoes PASSED [ 66%]
+tests/unidade/test_estrela.py::test_group_id_vem_da_coluna_sem_hive PASSED [ 83%]
+tests/unidade/test_estrela.py::test_dimensoes_e_grao PASSED              [100%]
+
+============================== 6 passed in 0.70s ===============================
