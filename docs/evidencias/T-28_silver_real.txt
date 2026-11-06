@@ -1,0 +1,12 @@
+$ make silver
+2026-11-06T16:15:41Z INFO tcg.lake.cliente: cliente MinIO: endpoint=localhost:9000 bucket=tcg secure=False
+2026-11-06T16:15:41Z INFO __main__: quarentena por tabela: preco_diario: 0, cambio_diario: 0, demais: 0
+2026-11-06T16:15:42Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/colecao/group_id=24269/colecao.parquet (779 bytes)
+2026-11-06T16:15:42Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/produto/group_id=24269/produto.parquet (14630 bytes)
+2026-11-06T16:15:42Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/cambio_diario/group_id=24269/cambio.parquet (1519 bytes)
+2026-11-06T16:15:42Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/cdi_diario/group_id=24269/cdi.parquet (833 bytes)
+2026-11-06T16:15:42Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-03/preco.parquet (8939 bytes)
+2026-11-06T16:15:43Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-04/preco.parquet (8922 bytes)
+2026-11-06T16:15:43Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-05/preco.parquet (8955 bytes)
+2026-11-06T16:15:43Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/quarentena/group_id=24269/quarentena.parquet (162 bytes)
+2026-11-06T16:15:43Z INFO __main__: linhas gravadas por tabela: colecao: 1, produto: 281, cambio_diario: 8, cdi_diario: 7, preco_diario: 1338, quarentena: 0
