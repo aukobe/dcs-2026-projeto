@@ -39,6 +39,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-04 | T-27 | "prompt de implementação padrão" | plano aprovado com uma decisão do autor: só teste de unidade com cliente MinIO falso em memória (o teste com MinIO real e bruto real fica para a T-28); `make silver` não foi executado. Criados `src/tcg/silver/construtor.py` (lista e lê pelo SDK só `raw/{tcgplayer,bcb_ptax,bcb_cdi}/group_id=24269/`; `preco_diario` com `data` da partição da chave e um Parquet por data, grão repetido no mesmo bruto vai à quarentena; `produto` com uma linha por `product_id`, do bruto mais recente; PTAX e CDI deduplicados por data; `colecao` de `config/colecao.toml`; bruto ilegível vai à quarentena; Escritor Parquet com DuckDB local em memória, sem httpfs, tipos do contrato e bytes enviados por `guarda_prefixo.gravar`; quarentena em `silver/quarentena/group_id=24269/quarentena.parquet`, gravada mesmo vazia; log com a contagem de quarentena e as linhas gravadas por tabela; nada é apagado), alvo `make silver` no `Makefile` (carrega o `.env` como o `sync`) e `tests/unidade/test_construtor_silver.py`. Nota da T-24 decidida: o construtor não usa `read_parquet`; quem lê a silver usa `hive_partitioning = false`, porque `group_id` já é coluna do contrato. 12 passed na 2ª execução (a 1ª falhou num teste porque o log era emitido na preparação do fixture e o `caplog.text` só mostra a fase de execução; o texto passou a ser guardado no fixture); suíte de unidade: 215 passed; evidência em `docs/evidencias/T-27_construtor_silver.txt` |
 | 2026-11-04 | T-28 | "prompt de implementação padrão" | plano aprovado com uma decisão do autor: o prompt pedia o MinIO descartável da T-19, mas a T-28 não tem a marca [contêiner]; o autor escolheu o bucket em memória (rede e contêiner ausentes), e o MinIO real fica para a T-34. Criado só `tests/integracao/test_coleta_silver.py`, sem mudança em `src/`: coletor com o cassete da T-20 (vcrpy `record_mode="none"`, 4 interações) → bruto gravado com o hash do manifesto → `construir_silver` num bucket em memória → teste de contrato (caminhos e prefixo `group_id=24269`, nomes e tipos de `CONTRATO`, `chave_raw` apontando para o bruto) e contagens do T-13 (281 produtos: 25 selados e 256 cartas; 446 preços com o `market_price` nulo do 637654; 6 PTAX Fechamento; 5 CDI; quarentena vazia); `socket.socket` e `getaddrinfo` bloqueados no módulo, com contador de tentativas em 0. 7 passed na 1ª execução; suíte completa: 236 passed; evidência em `docs/evidencias/T-28_coleta_silver.txt`. Em 2026-11-06, a primeira silver real foi gerada pelo autor com `make silver` contra o MinIO local, a partir do bruto de 2026-11-03, 2026-11-04 e 2026-11-05: colecao 1, produto 281, cambio_diario 8, cdi_diario 7, preco_diario 1338 (446 por data, três partições), quarentena 0. Conferência de PTAX e CDI: cambio_diario 8 = dias úteis de 26/10 a 05/11 sem o feriado de 02/11 (26, 27, 28, 29, 30/10 e 03, 04, 05/11), resultado da deduplicação das janelas sobrepostas dos três brutos; cdi_diario 7 = as mesmas datas sem 05/11, porque o CDI de um dia útil só é publicado na manhã seguinte; evidência em `docs/evidencias/T-28_silver_real.txt` |
 | 2026-11-04 | T-57 | texto completo em [Prompt da T-57 – Data de referência](#prompt-da-t-57--data-de-referência) | diagnóstico confirmado por `gh run view` das execuções #2 e #3 (atrasos de 4h17min e 4h29min, recusa por horário com código 2; evidência em `docs/evidencias/T-57_diagnostico.txt`); diffs do `specs/spec.md` (Definições, RF-01, RF-04, RNF-13), linha da T-57 e ADR-007 aprovados com um ajuste: Status "Aceito em 2026-11-04" (data local); decisões do autor aprovadas: plan.md atualizado (guarda, fluxo diário, cron, parâmetro, R-01, lista de ADRs), parâmetro `hora_minima_utc` renomeado para `hora_virada_ciclo_utc`, AGENTS.md esclarecido ("no máximo uma coleta por data de referência"); dois commits: primeiro os documentos, depois código, testes e workflow; `guarda.verificar_horario` e `ForaDoHorarioError` removidos, `data_referencia` criada; cron de reserva `30 6 * * *`; `make test`: 244 passed (evidência em `docs/evidencias/T-57_suite.txt`); nenhuma requisição ao TCGCSV ou ao BCB, `dados-raw` intocada; recuperação: depois do push da T-57, o autor disparou o workflow manualmente às 01h30 UTC de 2026-11-05 e a coleta gravou os quatro arquivos com `data=2026-11-04` (commit `8a50cea dados(coleta): 2026-11-04 [RF-01]` na `dados-raw`; evidência em `docs/evidencias/T-57_recuperacao.txt`), recuperando o dia; pendência futura: comparar o `prices.json` de 2026-11-03 e o de 2026-11-04 para confirmar que os preços mudaram entre os dias (risco de preço antigo do ADR-007) |
+| 2026-11-06 | T-29 | texto completo em [Prompt da T-29 – ADR-003](#prompt-da-t-29--adr-003) | rascunho aprovado com um ajuste: o nome da coluna da cotação no fato foi fixado como `cotacao_aplicada` (a cotação de venda usada na conversão); mantidos, por decisão do autor, o acoplamento das outras coleções à PTAX da DRI nas consequências negativas e o placar (RF-28) fora da estrela, lendo `gold_turma/carteira/`. Criado `docs/adr/ADR-003-estrela-outras-colecoes.md`; tempo de `make gold` registrado como hipótese: validação pendente. |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -776,4 +777,41 @@ Resposta de aprovação do autor:
 
 ```text
 Aprovo os diffs da spec, a linha da T-57 e o ADR-007, trocando a data do Status para "Aceito em 2026-11-04" (data local, como nos outros ADRs). Aprovo também as decisões 1, 2 e 3. Na decisão 4, faremos dois commits: primeiro os documentos (spec, tasks, plan, AGENTS e ADR-007), depois o código, os testes e o workflow. Pode seguir com as etapas 3 a 5 e, no resumo final, liste quais arquivos vão em cada um dos dois commits.
+```
+
+## Prompt da T-29 – ADR-003
+
+```text
+[C] Personagem
+Você é um arquiteto de software de dados. Você registra uma decisão já tomada pelo autor, com as alternativas descartadas e os custos dela. Você não escreve código nesta etapa.
+
+[R] Pedido
+Execute a tarefa T-29 de specs/tasks.md: escreva o ADR-003 registrando a decisão de modelar a gold como esquema estrela no DuckDB, com fato_preco_diario (grão: produto × acabamento × dia), fato_cambio_diario (dia de calendário), dim_produto, dim_colecao, dim_data e dim_acabamento, construída sobre a silver da DRI e das outras coleções disponíveis, lidas por curinga e somente para leitura, com gravação só em gold/group_id=24269/. Use o nome de arquivo que está na T-29 do specs/tasks.md.
+Use as mesmas seções dos ADRs anteriores: Status (aceito, com a data de hoje); Contexto e forças; Requisitos e cenários relacionados; Alternativas consideradas; Decisão e táticas; Consequências positivas; Consequências negativas; Riscos; Evidência necessária; Condição de revisão.
+
+[E] Exemplos
+Siga o formato e o nível de detalhe de docs/adr/ADR-004-camadas-derivadas.md e docs/adr/ADR-007-data-referencia-ciclo-tcgcsv.md.
+
+[A] Ajustes
+- No contexto ou nos requisitos, mostre como cada uma das cinco perguntas da persona (P1 a P5) e o desafio das carteiras é respondido como agregação do fato por alguma dimensão; cite os RF de cada pergunta.
+- Registre as decisões de modelagem: o fato guarda market_price_brl, a cotação aplicada e data_ptax (ASOF JOIN, nunca cotação posterior); dias desde o lançamento são calculados na consulta, a partir da data do fato e da data de lançamento da coleção, sem coluna guardada; a leitura da silver usa hive_partitioning = false, porque group_id já é coluna do contrato (nota da T-24); uma silver de outra coleção fora do contrato é ignorada com aviso no log.
+- Alternativas obrigatórias, cada uma com o motivo do descarte: tabela única larga (duplica atributos de produto e coleção a cada dia); snowflake (normalização a mais sem ganho para as perguntas); servidor analítico como ClickHouse ou Postgres (exige serviço sempre ligado, contra o custo zero); views sem materialização (recalcula tudo a cada consulta do painel); copiar as silvers de outras coleções para o nosso prefixo (viola a escrita só em group_id=24269); lista fixa de group_ids em configuração (precisa de manutenção a cada coleção nova).
+- Táticas pelo nome e atributo, por exemplo: modelo dimensional, para consultabilidade e modificabilidade; leitura por curinga, para extensibilidade; isolamento de falhas por coleção, para disponibilidade; fato com a cotação aplicada e a data do boletim, para auditabilidade.
+- Consequências negativas reais, entre elas: a gold depende de outras silvers seguirem o contrato; a gold é refeita inteira a cada execução (tempo: hipótese: validação pendente); as perguntas 3 e 5 ficam parciais enquanto não houver outras coleções.
+- Não invente números; use "hipótese: validação pendente" onde faltar valor.
+- Escreva como decisão do autor, sem citar material de aula.
+- Não altere nenhum outro arquivo além de, no final, specs/tasks.md (T-29 como [x]) e docs/prompts.md (uma linha na tabela, com este prompt registrado numa seção própria).
+
+[T] Tipo de saída
+Somente o arquivo do ADR-003, em Markdown, com no máximo duas páginas e meia. Mostre o rascunho completo antes de salvar e espere minha confirmação.
+
+[E] Extras
+Leia antes: AGENTS.md, docs/adr/ADR-004-camadas-derivadas.md, specs/spec.md (RF-10 a RF-28) e specs/plan.md (seções 6 e 7).
+Ao final, proponha a mensagem de commit docs(T-29): ADR-003 esquema estrela na gold [RF-10, RF-11, RF-12]. Pare ao final.
+```
+
+Resposta de aprovação do autor:
+
+```text
+Aprovado. Fixe o nome da coluna como cotacao_aplicada (a cotação de venda usada na conversão) no ADR, e mantenha o risco do acoplamento à PTAX da DRI e o placar fora da estrela. Pode salvar, marcar a T-29 e registrar o prompt.
 ```
