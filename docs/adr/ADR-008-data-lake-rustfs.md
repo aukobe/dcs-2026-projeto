@@ -70,7 +70,7 @@ No Codespace, `make sync`, `make silver` e `make gold` usam o `.env` apontado pa
 ## Consequências negativas
 
 - O workflow deixa de ser livre de secrets; o pior vazamento possível passa a ser a credencial de administrador da turma, não só o `GITHUB_TOKEN` efêmero.
-- Dependência de um servidor de terceiro: disponibilidade, TLS, versão do RustFS e compatibilidade S3. Com o SDK `minio`, confirmada na primeira sync; com o httpfs do DuckDB, hipótese: validação pendente na primeira silver e gold contra o RustFS.
+- Dependência de um servidor de terceiro: disponibilidade, TLS, versão do RustFS e compatibilidade S3. Com o SDK `minio`, confirmada na primeira sync e no passo do workflow; com o httpfs do DuckDB, validada em 2026-11-07 na primeira silver e gold contra o RustFS (`docs/evidencias/T-58_silver_gold_rustfs.txt`).
 - O bruto continua em dois lugares, e o lake pode ficar um ciclo atrás quando o passo falha.
 - O job pode ficar vermelho por causa do lake com a coleta perfeita; a conferência do RNF-13 precisa olhar o passo da coleta separado do passo da sincronização.
 - No lake, a imutabilidade do nosso bruto depende de todos os colegas: qualquer um com a mesma credencial pode alterar ou apagar objetos do nosso prefixo. O Sincronizador recria o que estiver ausente, mas não detecta alteração.
@@ -93,7 +93,8 @@ No Codespace, `make sync`, `make silver` e `make gold` usam o `.env` apontado pa
 - Primeira sincronização manual com o RustFS: 16 enviados, 0 falhas (`docs/evidencias/T-58_primeira_sync_rustfs.txt`).
 - Teste do workflow (T-58): passo depois do push, condição 0 ou 1 e publicação bem-sucedida, secrets só no `env` desse passo e nunca em `run`, `MINIO_SECURE=true`, nenhum `continue-on-error`, nenhum `echo` de `MINIO_*` nem `set -x`.
 - Suíte completa (`docs/evidencias/T-58_suite.txt`).
-- Primeira execução agendada com o passo de sincronização concluído: hipótese: validação pendente (autor).
+- Sincronização pelo workflow: validada em 2026-11-07 na execução coleta #10 (disparo manual), com o passo de sincronização concluído e enviados=0, recusados=16, falhas=0 (`docs/evidencias/T-58_sync_actions.txt`).
+- Silver e gold pelo DuckDB no RustFS: validadas em 2026-11-07 com `make silver` (1784 preços, 281 produtos, quarentena 0) e `make gold` (4 dias, só a DRI), executados pelo autor (`docs/evidencias/T-58_silver_gold_rustfs.txt`).
 - Busca de credenciais no histórico e nos logs do Actions incluindo a chave da turma (T-51).
 
 ## Condição de revisão

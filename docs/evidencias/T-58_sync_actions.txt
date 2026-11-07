@@ -1,0 +1,41 @@
+$ gh run view 42393032552 --log | grep -iE "sincroniza|encerrada"
+coletar	coletar	2026-11-07T16:47:39.1467753Z 2026-11-07T16:47:39Z INFO tcg.coleta: coleta encerrada: todos os arquivos da data de referência já existem; requisicoes=0
+coletar	sincronizar com o data lake da ***	﻿2026-11-07T16:47:39.1953050Z ##[group]Run python -m tcg.sync.sincronizador --repo ../dados
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1953693Z ^[[36;1mpython -m tcg.sync.sincronizador --repo ../dados^[[0m
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1968986Z shell: /usr/bin/bash -e {0}
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1969361Z env:
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1969769Z   TCG_USER_AGENT: colecao-dri/1.0
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1970255Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.18/x64
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1970798Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib/pkgconfig
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1971379Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1971846Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1972369Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1972917Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1973572Z   MINIO_ENDPOINT: ***
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1973987Z   MINIO_ACCESS_KEY: ***
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1974371Z   MINIO_SECRET_KEY: ***
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1974837Z   MINIO_SECURE: true
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1975161Z   MINIO_BUCKET: tcg
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1975661Z   GROUP_ID: 24269
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.1975963Z ##[endgroup]
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.4243858Z 2026-11-07T16:47:39Z INFO tcg.lake.cliente: cliente MinIO: endpoint=*** bucket=tcg secure=True
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.7567481Z 2026-11-07T16:47:39Z INFO tcg.sync.leitor_branch: branch buscada: origin/dados-raw
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:39.7586510Z 2026-11-07T16:47:39Z INFO tcg.sync.leitor_branch: arquivos em origin/dados-raw:raw/: 16
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:40.7778868Z 2026-11-07T16:47:40Z INFO tcg.lake.cliente: bucket já existe, não recriado: tcg
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:40.9529079Z 2026-11-07T16:47:40Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:41.1182002Z 2026-11-07T16:47:41Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_cdi/group_id=24269/data=2026-11-04/cdi.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:41.2820262Z 2026-11-07T16:47:41Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_cdi/group_id=24269/data=2026-11-05/cdi.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:41.4465498Z 2026-11-07T16:47:41Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_cdi/group_id=24269/data=2026-11-06/cdi.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:41.6103769Z 2026-11-07T16:47:41Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:41.7739957Z 2026-11-07T16:47:41Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_ptax/group_id=24269/data=2026-11-04/cotacao.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:41.9373803Z 2026-11-07T16:47:41Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_ptax/group_id=24269/data=2026-11-05/cotacao.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:42.1027527Z 2026-11-07T16:47:42Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/bcb_ptax/group_id=24269/data=2026-11-06/cotacao.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:42.2669669Z 2026-11-07T16:47:42Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:42.4304692Z 2026-11-07T16:47:42Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-03/products.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:42.5951193Z 2026-11-07T16:47:42Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-04/prices.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:42.7586265Z 2026-11-07T16:47:42Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-04/products.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:42.9222021Z 2026-11-07T16:47:42Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-05/prices.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:43.0859674Z 2026-11-07T16:47:43Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-05/products.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:43.2497747Z 2026-11-07T16:47:43Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-06/prices.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:43.4150164Z 2026-11-07T16:47:43Z WARNING __main__: recusa de sobrescrita: chave já existe no MinIO, não regravada: raw/tcgplayer/group_id=24269/data=2026-11-06/products.json
+coletar	sincronizar com o data lake da ***	2026-11-07T16:47:43.4151800Z 2026-11-07T16:47:43Z INFO __main__: sincronização encerrada: enviados=0 recusados=16 fora_do_escopo=0 falhas=0

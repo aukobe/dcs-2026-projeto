@@ -1,0 +1,26 @@
+$ make silver
+2026-11-07T16:49:47Z INFO tcg.lake.cliente: cliente MinIO: endpoint=s3.afonsolelis.tech bucket=tcg secure=True
+2026-11-07T16:49:50Z INFO __main__: quarentena por tabela: preco_diario: 0, cambio_diario: 0, demais: 0
+2026-11-07T16:49:50Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/colecao/group_id=24269/colecao.parquet (779 bytes)
+2026-11-07T16:49:51Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/produto/group_id=24269/produto.parquet (14630 bytes)
+2026-11-07T16:49:51Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/cambio_diario/group_id=24269/cambio.parquet (1552 bytes)
+2026-11-07T16:49:51Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/cdi_diario/group_id=24269/cdi.parquet (842 bytes)
+2026-11-07T16:49:51Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-03/preco.parquet (8939 bytes)
+2026-11-07T16:49:52Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-04/preco.parquet (8922 bytes)
+2026-11-07T16:49:52Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-05/preco.parquet (8955 bytes)
+2026-11-07T16:49:52Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/preco_diario/group_id=24269/data=2026-11-06/preco.parquet (8959 bytes)
+2026-11-07T16:49:52Z INFO tcg.lake.guarda_prefixo: objeto gravado: tcg/silver/quarentena/group_id=24269/quarentena.parquet (162 bytes)
+2026-11-07T16:49:52Z INFO __main__: linhas gravadas por tabela: colecao: 1, produto: 281, cambio_diario: 9, cdi_diario: 8, preco_diario: 1784, quarentena: 0
+
+$ make gold
+2026-11-07T16:49:53Z INFO tcg.lake.duckdb: DuckDB conectado ao MinIO: endpoint=s3.afonsolelis.tech bucket=tcg secure=True url_style=path
+2026-11-07T16:49:53Z INFO tcg.lake.cliente: cliente MinIO: endpoint=s3.afonsolelis.tech bucket=tcg secure=True
+2026-11-07T16:49:57Z INFO __main__: nenhuma outra coleção disponível: gold só com a DRI (RF-22)
+2026-11-07T16:49:57Z INFO __main__: coleções na gold: 24269
+2026-11-07T16:49:58Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_colecao.parquet
+2026-11-07T16:49:58Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_produto.parquet
+2026-11-07T16:49:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/fato_preco_diario.parquet
+2026-11-07T16:49:59Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_data.parquet
+2026-11-07T16:50:00Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/dim_acabamento.parquet
+2026-11-07T16:50:00Z INFO tcg.lake.duckdb: Parquet gravado: s3://tcg/gold/group_id=24269/fato_cambio_diario.parquet
+2026-11-07T16:50:00Z INFO __main__: linhas gravadas por tabela: dim_colecao: 1, dim_produto: 281, fato_preco_diario: 1784, dim_data: 4, dim_acabamento: 3, fato_cambio_diario: 4
