@@ -34,7 +34,7 @@ Documento derivado de `docs/00_persona.md`. Traduz a dor de Rafael, colecionador
 | RES-04 | PTAX de fechamento só existe em dia útil; em fim de semana e feriado vale a última PTAX de dia útil anterior, nunca uma posterior. | técnica | Contexto do projeto; decisão do autor |
 | RES-05 | CDI é série diária publicada só em dia útil. | técnica | Contexto do projeto |
 | RES-06 | Repositório público no GitHub; credenciais só no `.env` (fora do versionamento) e em secrets. | legal | Contexto do projeto; AGENTS.md |
-| RES-07 | Execução no GitHub Codespaces com MinIO local; coleta diária agendada no GitHub Actions (detalhes no `specs/plan.md`). | técnica | Decisão do autor |
+| RES-07 | Execução no GitHub Codespaces; armazenamento oficial no data lake da turma (RustFS compatível com S3), com MinIO local só para desenvolvimento; coleta diária agendada no GitHub Actions (detalhes no `specs/plan.md` e no ADR-008). | técnica | Decisão do autor |
 | RES-08 | Camada raw imutável (nenhum objeto sobrescrito ou apagado) e escrita só em prefixos com `group_id=24269`. | técnica | AGENTS.md |
 | RES-09 | Prazo de entrega: 12/12/2026, 23h59. | prazo | Contexto do projeto |
 | RES-10 | O período observado é de algumas semanas e não sustenta previsão. | técnica | Contexto do projeto |

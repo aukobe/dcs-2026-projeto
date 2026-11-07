@@ -16,7 +16,9 @@ Regras para qualquer agente de IA (ou pessoa) que trabalhe neste repositório. I
 ## Ambiente
 
 - Desenvolvimento e execução local no GitHub Codespaces, com Docker e Python.
-- MinIO local por docker compose (a criar numa tarefa futura), acessível em `localhost:9000`, bucket `tcg`.
+- Data lake oficial: bucket `tcg` do RustFS da turma, compatível com S3, em `https://s3.afonsolelis.tech` (região `us-east-1`, endereçamento por caminho), com credencial compartilhada da turma (ADR-008).
+- MinIO local por docker compose (ADR-002), em `localhost:9000`, bucket `tcg`, só para desenvolvimento; os testes de integração usam um MinIO descartável com a mesma imagem.
+- As variáveis `MINIO_*` apontam para qualquer servidor S3; o `.env` decide qual.
 - Configuração lida de variáveis de ambiente definidas no `.env` (modelo em `.env.example`).
 
 ## Arquitetura prevista
@@ -24,12 +26,13 @@ Regras para qualquer agente de IA (ou pessoa) que trabalhe neste repositório. I
 Tudo nesta seção está **a confirmar no plan.md**.
 
 1. Coleta diária no GitHub Actions, depois das 20h UTC, gravando as respostas originais numa branch `dados-raw` deste repositório.
-2. Um comando local sincroniza esses arquivos da branch `dados-raw` para o MinIO local, recusando sobrescrita.
-3. Silver, gold e dashboard rodam a partir do MinIO local.
+2. No mesmo job, um passo sincroniza a branch `dados-raw` com o data lake da turma, recusando sobrescrita; `make sync` faz o mesmo sob demanda.
+3. Silver, gold e dashboard rodam a partir do data lake da turma; o MinIO local serve só para desenvolvimento.
 
 ## Regras de escrita no data lake
 
 - Escreva somente em prefixos com `group_id=24269`: `tcg/raw/*/group_id=24269/`, `tcg/silver/*/group_id=24269/`, `tcg/gold/group_id=24269/`, `tcg/gold_turma/carteira/group_id=24269/`.
+- No data lake da turma, a credencial é de administrador e não impede a escrita em outros prefixos: esta regra, aplicada pela guarda de prefixo do código, é a única proteção dos dados dos colegas.
 - Criar o bucket tcg quando ele não existir é permitido, de forma idempotente; apagar buckets continua proibido.
 - Nenhum objeto em `tcg/raw/` é sobrescrito ou apagado; antes de gravar, confira se a chave já existe e, se existir, aborte com erro.
 - A camada raw guarda a resposta original da fonte, byte a byte, sem transformação.
@@ -46,19 +49,21 @@ Permitidos:
 
 Proibidos:
 - Ler, abrir ou imprimir o `.env` (`cat .env`, `source .env` seguido de `echo`, `printenv` de credenciais etc.).
-- Qualquer comando de exclusão no MinIO: `mc rm`, `mc rb`, `remove_object`, `remove_bucket` ou equivalentes.
+- Qualquer comando de exclusão no data lake da turma ou no MinIO local: `mc rm`, `mc rb`, `remove_object`, `remove_bucket` ou equivalentes.
 - Única exceção: `make reprocessar`, executado pelo autor, apaga objetos só em `tcg/silver/*/group_id=24269/`, `tcg/gold/group_id=24269/` e `tcg/gold_turma/carteira/group_id=24269/`; o agente continua proibido de executar qualquer exclusão, inclusive esse comando.
 - `git push --force` (e variantes como `--force-with-lease`).
 - `git commit` e `git push` pelo agente: o agente apenas propõe a mensagem de commit; quem commita é o autor.
-- Acessar a rede ou o MinIO fora de uma tarefa de `specs/tasks.md` que peça isso explicitamente.
+- Acessar a rede, o data lake da turma ou o MinIO local fora de uma tarefa de `specs/tasks.md` que peça isso explicitamente.
+- Usar a credencial da turma em qualquer ferramenta (`mc alias set`, AWS CLI, script avulso) e criar, ler ou alterar secrets do GitHub: quem configura os secrets é o autor.
 
 ## Política de segredos
 
-- A credencial do MinIO local fica só no `.env`, que está no `.gitignore`.
-- Nunca escreva credencial em arquivo versionado, log, evidência (`docs/evidencias/`), prompt (`docs/prompts.md`) ou mensagem de commit.
+- A credencial do data lake da turma (compartilhada e de administrador) vem do canal da turma e fica só no `.env` do Codespace, que está no `.gitignore`, e nos secrets do repositório no GitHub (`MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`). A credencial do MinIO local de desenvolvimento fica só no `.env`.
+- No workflow, `secrets.*` aparece só no `env` do passo de sincronização com o data lake: nunca dentro de `run`, em `echo`, com `set -x`, em artefato, em outro passo ou em workflow disparado por `pull_request`.
+- Nunca escreva credencial em arquivo versionado, diff, log (inclusive do GitHub Actions), evidência (`docs/evidencias/`), prompt (`docs/prompts.md`) ou mensagem de commit.
 - O `.env.example` contém apenas nomes de variáveis com valores vazios ou fictícios.
 - O código lê credenciais de variáveis de ambiente; nunca as recebe por argumento de linha de comando nem as imprime.
-- Se uma credencial vazar em qualquer lugar, pare e avise o autor antes de qualquer outro passo.
+- Se uma credencial vazar em qualquer lugar, pare e avise o autor antes de qualquer outro passo. A chave da turma afeta todos os colegas: o autor pede a rotação ao responsável pelo data lake e atualiza o `.env` e os secrets.
 
 ## Ordem SDD e gates por etapa
 

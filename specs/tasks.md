@@ -29,7 +29,7 @@ Documento derivado de `specs/spec.md` e `specs/plan.md`. Cada tarefa cabe num ú
 | T-13 | Validar as hipóteses da spec sobre o primeiro bruto: regra do `tipo_produto`, lista de raridades "Double Rare em diante", identificação e preço do booster box, preço dos selados, presença de `imageUrl` e `url`. Registrar os resultados e propor os ajustes da spec, para revisão do autor **[rede: só git fetch]** | RF-09, RF-16, RF-20, RF-23 | `git show origin/dados-raw:raw/tcgplayer/group_id=24269/data=$(git ls-tree --name-only origin/dados-raw:raw/tcgplayer/group_id=24269/ \| head -1 \| cut -d= -f2)/products.json \| python -m json.tool > /dev/null && test -s docs/evidencias/T-13_hipoteses.md` | `docs/evidencias/T-13_hipoteses.md` lista cada hipótese como confirmada ou refutada, com contagens tiradas do bruto | T-12 | agente | [x] |
 | T-57 | Correção: data de referência pelo ciclo do TCGCSV (das 20h UTC de D às 20h UTC de D+1 grava `data=D`) na guarda e no coletor, sem recusa por horário; guarda por arquivo inalterada; janela da PTAX e do CDI até a data de referência; cron de reserva `30 6 * * *` além de `30 20 * * *`; ADR-007 | RF-01, RF-04, RNF-13 | `pytest tests/unidade/test_coletor.py tests/unidade/test_clientes.py tests/unidade/test_workflow.py && make test` | 2026-11-05T00:59Z, 2026-11-04T20:30Z e 2026-11-05T19:59Z gravam `data=2026-11-04`; 2026-11-05T20:00Z grava `data=2026-11-05`; arquivos existentes do dia de referência geram zero requisições; o workflow tem os dois crons; diagnóstico em `docs/evidencias/T-57_diagnostico.txt` e suíte em `docs/evidencias/T-57_suite.txt` | T-06, T-10 | agente | [x] |
 
-## Bloco B: armazenamento local
+## Bloco B: armazenamento
 
 | ID | Tarefa | Requisitos | Verificação (comando) | Evidência esperada | Depende de | Executor | Status |
 |---|---|---|---|---|---|---|---|
@@ -41,6 +41,7 @@ Documento derivado de `specs/spec.md` e `specs/plan.md`. Cada tarefa cabe num ú
 | T-19 | Testes de integração com MinIO descartável (testcontainers): gravação, sincronização e recusa de sobrescrita, com o contêiner descartado no final **[contêiner]** | RNF-07, RF-02, RF-05 | `pytest tests/integracao/test_minio.py` | os testes passam; o contêiner de teste é removido no final e o MinIO local de trabalho não é tocado | T-15, T-18 | agente | [x] |
 | T-20 | Cassetes vcrpy em `tests/integracao/cassetes/`, montados a partir do bruto real da branch `dados-raw`, sem nova requisição ao TCGCSV; teste de integração da coleta com os cassetes e sem rede | RNF-06, RF-01 | `pytest tests/integracao/test_coleta_cassetes.py` | a coleta grava os quatro arquivos com hash igual ao do bruto real; nenhuma requisição sai para a internet | T-06, T-13 | agente | [x] |
 | T-21 | Primeira sincronização real da branch `dados-raw` para o MinIO local, executada duas vezes **[contêiner]** | RF-05 | `make sync && make sync` | a primeira execução copia os arquivos; a segunda só registra recusas; os hashes no MinIO são iguais aos dos blobs | T-12, T-16, T-18 | autor | [x] |
+| T-58 | Migração para o data lake da turma (RustFS): ADR-008 (`docs/adr/ADR-008-data-lake-rustfs.md`); spec, plan e AGENTS.md com o RustFS como armazenamento oficial; passo "sincronizar com o data lake da turma" no `.github/workflows/coleta.yml`, depois do push na `dados-raw` e quando o coletor termina com 0 ou 1, com `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` e `MINIO_SECRET_KEY` de secrets e `MINIO_SECURE=true`; teste do workflow; `.env.example` e seção do README sobre o data lake. Pré-requisitos do autor: primeira sync manual (`docs/evidencias/T-58_primeira_sync_rustfs.txt`) e os três secrets criados no repositório | RF-05, RNF-07, RNF-08, RNF-13 | `pytest tests/unidade/test_workflow.py && make test` | o teste confirma o passo depois do push, a condição 0 ou 1, secrets só no `env` desse passo e nunca em `run` nem em `echo`, `MINIO_SECURE=true` e nenhum `continue-on-error`; `.env.example` sem credencial; suíte em `docs/evidencias/T-58_suite.txt` | T-21, T-57 | agente | [ ] |
 
 ## Bloco C: lakehouse
 
@@ -109,7 +110,7 @@ Nenhum. Todo RF e RNF de `specs/spec.md` é atendido por pelo menos uma tarefa (
 | RF-02 | T-06, T-07, T-08, T-09, T-12, T-19 |
 | RF-03 | T-03, T-04, T-11 |
 | RF-04 | T-06, T-57 |
-| RF-05 | T-07, T-17, T-18, T-19, T-21 |
+| RF-05 | T-07, T-17, T-18, T-19, T-21, T-58 |
 | RF-06 | T-03, T-24, T-27 |
 | RF-07 | T-25, T-26, T-27 |
 | RF-08 | T-25 |
@@ -139,10 +140,10 @@ Nenhum. Todo RF e RNF de `specs/spec.md` é atendido por pelo menos uma tarefa (
 | RNF-04 | T-22, T-33 |
 | RNF-05 | T-02 |
 | RNF-06 | T-20, T-28 |
-| RNF-07 | T-19 |
-| RNF-08 | T-03, T-07, T-10, T-16, T-18, T-51 |
+| RNF-07 | T-19, T-58 |
+| RNF-08 | T-03, T-07, T-10, T-16, T-18, T-51, T-58 |
 | RNF-09 | T-07, T-14, T-15, T-49 |
 | RNF-10 | T-01, T-14, T-15, T-16, T-49, T-50 |
 | RNF-11 | T-27, T-34 |
 | RNF-12 | T-04, T-12, T-52 |
-| RNF-13 | T-10, T-11, T-12, T-49, T-52, T-57 |
+| RNF-13 | T-10, T-11, T-12, T-49, T-52, T-57, T-58 |

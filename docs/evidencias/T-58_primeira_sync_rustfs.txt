@@ -1,0 +1,22 @@
+$ make sync   # primeira sincronização com o RustFS da turma
+2026-11-07T16:22:39Z INFO tcg.lake.cliente: cliente MinIO: endpoint=s3.afonsolelis.tech bucket=tcg secure=True
+2026-11-07T16:22:39Z INFO tcg.sync.leitor_branch: branch buscada: origin/dados-raw
+2026-11-07T16:22:39Z INFO tcg.sync.leitor_branch: arquivos em origin/dados-raw:raw/: 16
+2026-11-07T16:22:40Z INFO tcg.lake.cliente: bucket já existe, não recriado: tcg
+2026-11-07T16:22:40Z INFO __main__: enviado: raw/bcb_cdi/group_id=24269/data=2026-11-03/cdi.json sha256=5667042041c7163de0c0d33a37652759accdabc9c59771f9570bb3f4a8032b42 bytes=206
+2026-11-07T16:22:41Z INFO __main__: enviado: raw/bcb_cdi/group_id=24269/data=2026-11-04/cdi.json sha256=079f8ac41b2816eb4ea0ac1236458040e6678798d34d71edca43d17f4dacf7bf bytes=247
+2026-11-07T16:22:41Z INFO __main__: enviado: raw/bcb_cdi/group_id=24269/data=2026-11-05/cdi.json sha256=a6f7fab08004407c1ca38be288399d377e1ab9117f885d7ac6274c9754b86d1b bytes=247
+2026-11-07T16:22:42Z INFO __main__: enviado: raw/bcb_cdi/group_id=24269/data=2026-11-06/cdi.json sha256=93f6c9167464732d484a3e152934eccd9076fba025fa911237a33b4e0e3208a0 bytes=247
+2026-11-07T16:22:42Z INFO __main__: enviado: raw/bcb_ptax/group_id=24269/data=2026-11-03/cotacao.json sha256=e48f248bd84adc3d09fd153811a3fa1b3a22c28a35a75b3841b7fde723511fbd bytes=5338
+2026-11-07T16:22:42Z INFO __main__: enviado: raw/bcb_ptax/group_id=24269/data=2026-11-04/cotacao.json sha256=1559e61f34bb76fdc97f933e432851d20a8170d20986405fd4e4f3b2ff8a91ca bytes=6208
+2026-11-07T16:22:43Z INFO __main__: enviado: raw/bcb_ptax/group_id=24269/data=2026-11-05/cotacao.json sha256=c3849f7b8bca8faf0fd134e6ff205162e43f12595269df26c76ea399a1893ea3 bytes=6208
+2026-11-07T16:22:43Z INFO __main__: enviado: raw/bcb_ptax/group_id=24269/data=2026-11-06/cotacao.json sha256=c3862db98c44b92ba6ecde0aeeb5a27377269823cd1c01842811a6b2582f15ba bytes=6207
+2026-11-07T16:22:44Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json sha256=8334d619af6ce2b16309a3ef474c85862a0c9cf498466502366768e9b916eac5 bytes=68212
+2026-11-07T16:22:45Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-03/products.json sha256=3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839 bytes=328928
+2026-11-07T16:22:45Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-04/prices.json sha256=7c36af899c4631704c663e2835bda18f996792bbb81872a064fe19eb67b22f09 bytes=68228
+2026-11-07T16:22:46Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-04/products.json sha256=3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839 bytes=328928
+2026-11-07T16:22:46Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-05/prices.json sha256=ec820b43e14f5c420678717fe82722df1c5d51c3dfc521c7e949983ff93d1234 bytes=68066
+2026-11-07T16:22:47Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-05/products.json sha256=3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839 bytes=328928
+2026-11-07T16:22:47Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-06/prices.json sha256=bd50dd54af9b5613815eb64cdcb42b0febbd1091a2e25bca3281f971ee4235f1 bytes=68082
+2026-11-07T16:22:48Z INFO __main__: enviado: raw/tcgplayer/group_id=24269/data=2026-11-06/products.json sha256=3a1f9dfc1fc320d6701f30a273c8547f9abfff2a676bd62ca1eadcc8a3e30839 bytes=328928
+2026-11-07T16:22:48Z INFO __main__: sincronização encerrada: enviados=16 recusados=0 fora_do_escopo=0 falhas=0

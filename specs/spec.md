@@ -7,6 +7,7 @@ Requisitos derivados de `docs/00_persona.md` e `docs/01_objetivos_negocio.md`. C
 - **Item**: par produto × acabamento (`product_id`, `acabamento`). É o grão de todo o projeto. Uma carta em Holofoil e a mesma carta em Reverse Holofoil são itens distintos, inclusive na cesta_raras, na P5 e no "um exemplar de cada carta" da P3 e da P4.
 - **Primeiro dia**: menor `data` com bruto do TCGCSV da coleção. **Último dia**: maior `data` com esse bruto.
 - **Data de referência** (ciclo do TCGCSV): a fonte atualiza o preço por volta das 20h UTC. O ciclo da data D vai de 20h00 UTC de D (inclusive) a 20h00 UTC de D+1 (exclusive), e toda coleta feita nesse intervalo grava como `data=D`. É a `data` das chaves do bruto e de todas as camadas. Exemplos: 2026-11-04T20:30Z e 2026-11-05T19:59Z → 2026-11-04; 2026-11-05T20:00Z → 2026-11-05 (ADR-007).
+- **Data lake da turma**: bucket `tcg` do RustFS compatível com S3 em `https://s3.afonsolelis.tech` (região `us-east-1`, endereçamento por caminho). É o armazenamento oficial de bruto, silver, gold e gold_turma (ADR-008). O **MinIO local** serve só para desenvolvimento, e os testes de integração usam um MinIO descartável. As variáveis `MINIO_*` apontam para qualquer um desses servidores.
 - **PTAX aplicada no dia D**: a cotação de boletim `Fechamento` com a maior `data` ≤ D. Nunca uma de data posterior.
 - **tipo_produto** (validado no T-13 (docs/evidencias/T-13_hipoteses.md)): produto sem número de carta é `selado`; os demais são `carta`. Exceção: raridade "Code Card" é sempre `carta`.
 - **Raridades "Double Rare em diante"** (validado no T-13 (docs/evidencias/T-13_hipoteses.md)), em ordem: Double Rare, Ultra Rare, Illustration Rare, Special Illustration Rare, Hyper Rare. Uma raridade que a fonte trouxer fora da lista entra como pendência.
@@ -27,7 +28,7 @@ Requisitos derivados de `docs/00_persona.md` e `docs/01_objetivos_negocio.md`. C
 
 Os nomes e tipos de colunas abaixo são obrigatórios. Colunas extras são permitidas; mudar o nome ou o tipo de uma coluna, não.
 
-**Bruto** (bucket `tcg`):
+**Bruto** (bucket `tcg` do data lake da turma):
 - `raw/tcgplayer/group_id=24269/data=AAAA-MM-DD/products.json`
 - `raw/tcgplayer/group_id=24269/data=AAAA-MM-DD/prices.json`
 - `raw/bcb_ptax/group_id=24269/data=AAAA-MM-DD/cotacao.json`
@@ -86,13 +87,14 @@ Não há recusa por horário: todo momento pertence a um ciclo. A guarda é por 
   - Quando a coleta for executada
   - Então nenhuma requisição é enviada para esse arquivo e o motivo aparece no log; com os quatro arquivos gravados, nenhuma requisição é enviada
 
-### RF-05: sincroniza o bruto para o MinIO local sem sobrescrever
-Um comando local copia os arquivos da branch `dados-raw` para o MinIO local.
+### RF-05: sincroniza o bruto para o data lake da turma sem sobrescrever
+O Sincronizador copia os arquivos da branch `dados-raw` para o bucket `tcg` do data lake da turma. Ele roda todo dia no workflow da coleta, depois do push na `dados-raw`, e sob demanda pelo comando local `make sync` (ADR-008).
 - Origem: OBJ-06, RES-07, RES-08
 - Critério de aceite:
-  - Dado um arquivo que já existe no MinIO com a mesma chave
+  - Dado um arquivo que já existe no bucket com a mesma chave
   - Quando a sincronização for executada
   - Então o objeto não é regravado, o hash continua igual e a recusa aparece no log; os arquivos novos são copiados com o hash do arquivo de origem
+  - E, dado uma execução da coleta que termina com código 0 ou 1, a sincronização roda no mesmo job depois do push na `dados-raw`; se ela falhar, o job termina como falho e o commit da `dados-raw` permanece
 
 ### RF-06: constrói a silver no contrato comum
 - Origem: OBJ-01, OBJ-02, RES-08
@@ -338,7 +340,7 @@ O painel lê `gold_turma/carteira/` de todas as coleções disponíveis, somente
 - Critério de aceite:
   - Dado um MinIO em contêiner criado para o teste
   - Quando os testes de gravação, sincronização e recusa de sobrescrita forem executados
-  - Então eles passam e o contêiner é descartado no final, sem tocar no MinIO local de trabalho
+  - Então eles passam e o contêiner é descartado no final, sem tocar no data lake da turma nem no MinIO local de desenvolvimento
 
 ### RNF-08: segredos fora do Git
 - Atributo: segurança
@@ -347,6 +349,7 @@ O painel lê `gold_turma/carteira/` de todas as coleções disponíveis, somente
   - Dado o histórico completo do repositório e os logs de execução
   - Quando uma busca por credenciais for executada
   - Então nada é encontrado, e o código lê credenciais só de variáveis de ambiente
+  - E, no workflow, as credenciais do data lake da turma aparecem só como secrets, no `env` do passo de sincronização, sem `echo`
 
 ### RNF-09: custo zero
 - Atributo: custo
@@ -381,7 +384,7 @@ O painel lê `gold_turma/carteira/` de todas as coleções disponíveis, somente
   - Então há no máximo 10.000 requisições ao TCGCSV
 
 ### RNF-13: execução agendada
-A coleta roda em todo ciclo do TCGCSV sem intervenção manual, com credenciais só em variáveis de ambiente e secrets. Há dois horários agendados: o principal às 20h30 UTC e a reserva às 06h30 UTC. A reserva só faz requisição para os arquivos que ainda faltam (ADR-007).
+A coleta roda em todo ciclo do TCGCSV sem intervenção manual, com credenciais só em variáveis de ambiente e secrets. Há dois horários agendados: o principal às 20h30 UTC e a reserva às 06h30 UTC. A reserva só faz requisição para os arquivos que ainda faltam (ADR-007). No mesmo job, depois do push na `dados-raw`, o bruto é sincronizado com o data lake da turma (RF-05, ADR-008).
 - Atributo: operabilidade
 - Origem: OBJ-01, DRV-01, RES-06, RES-07
 - Critério de aceite:
