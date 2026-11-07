@@ -1,4 +1,4 @@
-"""Testes do workflow do Coletor diário (T-10, T-57; RF-01, RNF-08, RNF-13).
+"""Testes do workflow do Coletor diário (T-10, T-57, T-58; RF-01, RF-05, RNF-08, RNF-13).
 
 Lê `.github/workflows/coleta.yml` com `yaml.safe_load`. No YAML 1.1 a chave
 `on:` vira o booleano True; os gatilhos são buscados pelos dois casos.
@@ -6,11 +6,19 @@ Lê `.github/workflows/coleta.yml` com `yaml.safe_load`. No YAML 1.1 a chave
 
 from pathlib import Path
 import re
+import tomllib
 
 import pytest
 import yaml
 
-WORKFLOW = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "coleta.yml"
+RAIZ = Path(__file__).resolve().parents[2]
+WORKFLOW = RAIZ / ".github" / "workflows" / "coleta.yml"
+SINCRONIZAR = "sincronizar com o data lake da turma"
+SECRETS_ESPERADOS = {
+    "MINIO_ENDPOINT": "${{ secrets.MINIO_ENDPOINT }}",
+    "MINIO_ACCESS_KEY": "${{ secrets.MINIO_ACCESS_KEY }}",
+    "MINIO_SECRET_KEY": "${{ secrets.MINIO_SECRET_KEY }}",
+}
 
 
 @pytest.fixture(scope="module")
@@ -70,10 +78,6 @@ def test_permissoes_minimas(wf, job):
     assert "permissions" not in job
 
 
-def test_nenhum_secret(texto):
-    assert "secrets." not in texto
-
-
 def test_user_agent_vem_de_vars(job):
     assert job["env"]["TCG_USER_AGENT"] == "${{ vars.TCG_USER_AGENT }}"
 
@@ -127,3 +131,79 @@ def test_publica_com_codigo_1_e_falha_depois(passos):
     assert resultado["if"] == "always()"
     assert resultado["env"]["CODIGO"] == "${{ steps.coleta.outputs.codigo }}"
     assert 'exit "${CODIGO:-1}"' in resultado["run"]
+
+
+# --- T-58: sincronização com o data lake da turma (ADR-008; RF-05, RNF-08) ---
+
+
+def test_sem_gatilho_de_pull_request(gatilhos):
+    # Secrets não podem ficar ao alcance de código vindo de pull request.
+    assert "pull_request" not in gatilhos
+    assert "pull_request_target" not in gatilhos
+
+
+def test_sincronizacao_depois_do_push_e_antes_do_resultado(passos):
+    nomes = [p.get("name") for p in passos]
+    assert nomes.index("publicar na dados-raw") < nomes.index(SINCRONIZAR) < nomes.index("resultado da coleta")
+
+
+def test_sincronizacao_so_com_codigo_0_ou_1_e_publicacao_concluida(passos):
+    publicar = _passo(passos, "publicar na dados-raw")
+    assert publicar["id"] == "publicar"
+    condicao = _passo(passos, SINCRONIZAR)["if"]
+    assert "steps.coleta.outputs.codigo == '0'" in condicao
+    assert "steps.coleta.outputs.codigo == '1'" in condicao
+    assert "steps.publicar.outcome == 'success'" in condicao
+    assert "'2'" not in condicao
+    # Sem always(), failure() nem cancelled(): o passo não roda se a publicação falhou.
+    assert not re.search(r"always\(|failure\(|cancelled\(", condicao)
+
+
+def test_sincronizacao_roda_o_sincronizador_sobre_a_dados_raw(passos):
+    caminho_main = next(p["with"]["path"] for p in _checkouts(passos) if p["with"]["ref"] == "main")
+    caminho_dados = next(p["with"]["path"] for p in _checkouts(passos) if p["with"]["ref"] == "dados-raw")
+    passo = _passo(passos, SINCRONIZAR)
+    assert passo["working-directory"] == caminho_main
+    assert passo["run"].strip() == f"python -m tcg.sync.sincronizador --repo ../{caminho_dados}"
+
+
+def test_sincronizacao_com_tls_bucket_e_group_id_literais(passos):
+    env = _passo(passos, SINCRONIZAR)["env"]
+    assert env["MINIO_SECURE"] == "true"
+    assert env["MINIO_BUCKET"] == "tcg"
+    colecao = tomllib.loads((RAIZ / "config" / "colecao.toml").read_text(encoding="utf-8"))
+    assert env["GROUP_ID"] == str(colecao["group_id"]) == "24269"
+
+
+def test_secrets_so_no_env_do_passo_de_sincronizacao(texto, wf, job, passos):
+    env = _passo(passos, SINCRONIZAR)["env"]
+    assert {k: v for k, v in env.items() if "secrets." in str(v)} == SECRETS_ESPERADOS
+    # Exatamente três referências a secrets no arquivo inteiro: as do env acima.
+    assert len(re.findall(r"secrets\.", texto)) == len(SECRETS_ESPERADOS)
+    assert "secrets." not in str(wf.get("env", ""))
+    assert "secrets." not in str({k: v for k, v in job.items() if k != "steps"})
+    for passo in passos:
+        if passo.get("name") != SINCRONIZAR:
+            assert "secrets." not in str(passo), f"secret fora do passo de sincronização: {passo.get('name')}"
+
+
+def test_secrets_nunca_em_run_echo_ou_set_x(texto, passos):
+    sincronizar = _passo(passos, SINCRONIZAR)
+    assert "${{" not in sincronizar["run"]
+    assert "secrets." not in sincronizar["run"]
+    assert not re.search(r"set\s+-[a-z]*x", texto)
+    for passo in passos:
+        for linha in str(passo.get("run", "")).splitlines():
+            if re.search(r"\b(echo|printf|printenv|env)\b", linha):
+                assert "MINIO_" not in linha, f"variável MINIO_* impressa em: {linha.strip()}"
+            assert "printenv" not in linha
+
+
+def test_falha_da_sincronizacao_marca_o_job_e_nao_desfaz_o_push(job, passos):
+    # Sem continue-on-error: a falha do passo deixa o job vermelho.
+    assert "continue-on-error" not in job
+    assert all("continue-on-error" not in p for p in passos)
+    # Nenhum comando que desfaça o push depois dele.
+    depois = passos[[p.get("name") for p in passos].index(SINCRONIZAR):]
+    for passo in depois:
+        assert not re.search(r"\bgit\s+(push|reset|revert)\b", str(passo.get("run", "")))

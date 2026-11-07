@@ -1,9 +1,12 @@
-"""Conexão DuckDB com httpfs para o MinIO local (specs/plan.md, seções 4 e 6; RF-06, RF-10, R-08).
+"""Conexão DuckDB com httpfs para o servidor S3 de `MINIO_ENDPOINT` (specs/plan.md, seções 4 e 6; RF-06, RF-10, R-08).
+
+O servidor é o data lake da turma (RustFS) ou, em desenvolvimento, o MinIO
+local (ADR-008); as variáveis `MINIO_*` valem para qualquer servidor S3.
 
 - A extensão `httpfs` é instalada na preparação do ambiente (`make setup`);
   este módulo nunca a baixa: o auto-install fica desligado e só há `LOAD`.
 - Segredo S3 temporário (só em memória): estilo de caminho, SSL conforme
-  `MINIO_SECURE` (false no MinIO local) e credenciais lidas do ambiente pelo
+  `MINIO_SECURE` (true no data lake da turma, false no MinIO local) e credenciais lidas do ambiente pelo
   Leitor de configuração. Nenhuma credencial vai para o log (RNF-08).
 - Toda gravação de Parquet passa por `gravar_parquet`, que valida a chave na
   Guarda de prefixo **antes** do `COPY` (RNF-03, ADR-004).

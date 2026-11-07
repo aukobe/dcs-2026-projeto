@@ -43,6 +43,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-06 | T-30 | "prompt de implementação padrão" | plano aprovado com um acréscimo do autor: teste de preço anterior ao primeiro boletim de PTAX, que continua no fato com `market_price_brl`, `cotacao_aplicada` e `data_ptax` nulos. Criados `src/tcg/gold/__init__.py`, `src/tcg/gold/sql/` (`dim_colecao.sql`, `dim_produto.sql`, `fato_preco_diario.sql`, `dim_data.sql`, `dim_acabamento.sql` e `__init__.py` com `montar_estrela(con, base)`, que cria as tabelas em memória sem gravar nada) e `tests/unidade/test_estrela.py`; `pyproject.toml` com `package-data` para os `.sql`. Decisão da nota da T-24: toda leitura da silver usa `hive_partitioning = false` (group_id vem da coluna do contrato), com `union_by_name = true` por curinga; câmbio só da silver da DRI; `ASOF LEFT JOIN` com `p.data >= c.data_ptax`; `dim_data` vai do primeiro ao último dia com preço, sem preencher lacunas. `fato_cambio_diario` fica para a T-31 e a conferência do contrato por coleção para a T-32. 6 passed na 2ª execução (a 1ª falhou só por contagem errada no próprio teste, 9 em vez de 8 linhas da fixture); suíte de unidade: 229 passed; evidência em `docs/evidencias/T-30_estrela.txt` |
 | 2026-11-06 | T-31 | "prompt de implementação padrão" | plano aprovado com `cdi_taxa_dia` e um acréscimo do autor: coluna `cdi_pendente` (BOOLEAN), verdadeira quando há boletim de PTAX com `data_ptax` igual ao próprio dia e não há CDI nessa data, falsa nos demais dias (fins de semana e feriados inclusive), com teste de 13/10 sem CDI (pendente) e 12/10 feriado (não pendente). Criados `src/tcg/gold/sql/fato_cambio_diario.sql` (um dia de `dim_data` por linha; ASOF LEFT JOIN com `d.data >= c.data_ptax` na `cambio_diario` da DRI; CDI só na data exata, senão 0) e `tests/unidade/test_fato_cambio.py`; `fato_cambio_diario` incluído em `TABELAS`. Ajuste no `tests/unidade/test_estrela.py`: conjunto de `TABELAS` atualizado e `cdi.parquet` vazio na fixture, porque o DuckDB não aceita glob sem arquivo (a silver real sempre grava as cinco tabelas). 6 passed na 1ª execução; suíte de unidade: 235 passed; evidência em `docs/evidencias/T-31_fato_cambio.txt` |
 | 2026-11-06 | T-32 | "prompt de implementação padrão" | plano aprovado sem ajustes (`gold/group_id=24269/<tabela>.parquet` e código de saída 3). Criados `src/tcg/gold/construtor.py` (descoberta das silvers pelo SDK, só leitura; conferência de colunas e tipos por coleção contra o `CONTRATO` da silver, com colunas extras permitidas; coleção fora do contrato ou incompleta ignorada com aviso `silver ignorada: group_id=... motivo=...`; silver da DRI ausente ou fora do contrato aborta com `SilverDriInvalidaError`, código 3; seis tabelas gravadas por `gravar_parquet`, que passa pela Guarda de prefixo) e `tests/integracao/test_construtor_gold.py` (MinIO descartável da T-19; cenários com três coleções, só a DRI e sem a DRI); alvo `make gold` no `Makefile`. SQL alterado: curingas de `colecao`, `produto` e `preco_diario` viraram marcadores `{arquivos_<tabela>}`, e `montar_estrela` passou a aceitar a lista de arquivos aprovados (sem ela, mantém o curinga dos testes da T-30 e da T-31). 5 passed na 1ª execução; suíte completa: 261 passed; nenhum contêiner de teste restante; `make gold` não foi executado contra o MinIO de trabalho (primeira execução real fica para o autor); evidência em `docs/evidencias/T-32_construtor_gold.txt`; primeira gold real gerada pelo autor com `make gold` no MinIO local (silver de 2026-11-03, 04 e 05): só a DRI ("nenhuma outra coleção disponível"), seis Parquets em `gold/group_id=24269/`, linhas por tabela conferidas contra a silver (`dim_colecao`: 1, `dim_produto`: 281 = 281 produtos, `fato_preco_diario`: 1338 = 1338 preços, `dim_data`: 3 = 3 dias, `fato_cambio_diario`: 3, `dim_acabamento`: 3, os três `subTypeName` do T-13); evidência em `docs/evidencias/T-32_gold_real.txt` |
+| 2026-11-07 | T-58 | texto completo em [Prompt da T-58 – Data lake da turma no RustFS](#prompt-da-t-58--data-lake-da-turma-no-rustfs) | proposta aprovada sem alterações de texto (ADR-008, diffs da spec, do plan e do AGENTS.md, linha da T-58 no Bloco B, renomeado para "Bloco B: armazenamento"), com quatro decisões do autor: 1) o passo de sincronização roda sempre que o coletor termina com 0 ou 1, mesmo sem arquivo novo, e só se o passo "publicar" tiver dado certo; 2) os secrets `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` e `MINIO_SECRET_KEY` são criados pelo autor no site do GitHub; 3) as variáveis `MINIO_*` não são renomeadas; 4) ajustes também na RES-07 de `docs/01_objetivos_negocio.md` (a persona não menciona o MinIO) e na docstring de `src/tcg/lake/duckdb.py`; passo "sincronizar com o data lake da turma" no `.github/workflows/coleta.yml` (`python -m tcg.sync.sincronizador --repo ../dados`, secrets só no `env` do passo, `MINIO_SECURE=true`); `test_workflow.py` com 7 testes novos no lugar de `test_nenhum_secret` (18 passed; três mutações conferidas: secret no env do job, echo da chave e continue-on-error); `.env.example` com o endpoint do RustFS e `MINIO_SECURE=true`, sem credencial; seção "Data lake" no README; nenhum comando contra o RustFS ou o MinIO local; `make test`: 268 passed; evidências em `docs/evidencias/T-58_primeira_sync_rustfs.txt` (autor) e `docs/evidencias/T-58_suite.txt` |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -817,4 +818,50 @@ Resposta de aprovação do autor:
 
 ```text
 Aprovado. Fixe o nome da coluna como cotacao_aplicada (a cotação de venda usada na conversão) no ADR, e mantenha o risco do acoplamento à PTAX da DRI e o placar fora da estrela. Pode salvar, marcar a T-29 e registrar o prompt.
+```
+
+## Prompt da T-58 – Data lake da turma no RustFS
+
+```text
+[C] Personagem
+Você é um arquiteto e engenheiro de dados que conduz uma mudança de infraestrutura com disciplina SDD: primeiro decisão e especificação, depois código e teste.
+
+[R] Pedido
+O professor passou a usar como data lake da turma um RustFS compatível com S3, em https://s3.afonsolelis.tech (região us-east-1, endereçamento por caminho), bucket tcg, com uma credencial compartilhada da turma. O autor já apontou o .env para ele e rodou make sync, gravando o bruto da DRI em tcg/raw/*/group_id=24269/ (evidência em docs/evidencias/T-58_primeira_sync_rustfs.txt). Registre e conclua essa migração como a tarefa T-58, nesta ordem, parando para minha aprovação onde indicado:
+1. Proponha, sem salvar:
+   - o ADR-008 (data lake da turma no RustFS), com as seções dos ADRs anteriores, registrando: o RustFS passa a ser o armazenamento oficial de bruto, silver, gold e gold_turma; o MinIO local continua só para desenvolvimento e para os testes de integração (que seguem com a imagem do ADR-002); a branch dados-raw continua como fonte de verdade do bruto; e a decisão de acrescentar ao workflow da coleta um passo que sincroniza a branch com o RustFS todo dia, usando as credenciais em secrets do GitHub. Diga quais partes do ADR-001 e do ADR-002 ele substitui. Inclua entre as alternativas: manter só o make sync manual; o workflow gravar direto no RustFS sem a branch; continuar no MinIO local. Entre os riscos: a credencial é compartilhada e de administrador, então a guarda de prefixo é a única proteção dos dados dos colegas; o workflow passa a usar secrets.
+   - os diffs do specs/spec.md, do specs/plan.md (diagramas C4, ambientes e fluxo diário) e do AGENTS.md (política de segredos cobrindo a chave da turma e os secrets do GitHub) que trocam "MinIO local" por "RustFS da turma" onde for o armazenamento oficial;
+   - a linha da T-58 no specs/tasks.md.
+   Pare e espere minha aprovação.
+2. Depois de aprovado, implemente:
+   - o passo de sincronização no .github/workflows/coleta.yml: roda depois do commit e do push na dados-raw, só quando houver arquivos novos ou quando o coletor terminar com 0 ou 1; lê MINIO_ENDPOINT, MINIO_ACCESS_KEY e MINIO_SECRET_KEY de secrets e MINIO_SECURE=true; uma falha nesse passo marca o job como falho, mas não desfaz o push na branch;
+   - o teste do workflow cobrindo esse passo (secrets só nesse passo, nunca em echo ou log);
+   - o .env.example com o endpoint do RustFS e MINIO_SECURE=true, sem nenhuma credencial;
+   - a seção do README sobre o data lake (endereço do RustFS, que as credenciais vêm do canal da turma e ficam só no .env e nos secrets, e como apontar o .env para o MinIO local em desenvolvimento).
+3. Rode a suíte completa e mostre a saída real.
+
+[E] Exemplos
+Commits esperados, na ordem: docs(T-58): ADR-008 data lake da turma no RustFS [RNF-13]; feat(T-58): workflow sincroniza a dados-raw com o RustFS [RF-05, RNF-13].
+
+[A] Ajustes
+- Não leia nem imprima o .env; a credencial da turma nunca aparece em arquivo, log, evidência, diff ou mensagem.
+- Não execute make sync, make silver, make gold, exclusões nem qualquer comando contra o RustFS ou o MinIO local; não faça requisição às fontes.
+- Mantenha os nomes das variáveis MINIO_* (registre no ADR que elas apontam para qualquer servidor S3); se achar que vale renomear, só proponha.
+- Não faça commit nem push.
+- Escreva os documentos como decisão do autor, sem citar material de aula.
+- Responda em português do Brasil.
+
+[T] Tipo de saída
+Primeiro: rascunho do ADR-008, diffs da spec, do plan e do AGENTS.md e a linha da T-58, e pare. Depois da aprovação: workflow, teste, .env.example, README, evidência da suíte, specs/tasks.md (T-58 como [x]) e docs/prompts.md atualizados, e a lista de arquivos de cada um dos dois commits.
+
+[E] Extras
+Leia antes: AGENTS.md, specs/spec.md, specs/plan.md, specs/tasks.md, docs/adr/ADR-001-bruto-dados-raw.md, docs/adr/ADR-002-imagem-minio.md, docs/adr/ADR-007-data-referencia-ciclo-tcgcsv.md, .github/workflows/coleta.yml, .env.example e docs/evidencias/T-58_primeira_sync_rustfs.txt.
+```
+
+Resposta de aprovação do autor:
+
+```text
+Aprovo o ADR-008, os diffs da spec, do plan e do AGENTS.md e a linha da T-58 no Bloco B, renomeado para "Bloco B: armazenamento".
+Decisões: 1) o passo roda sempre que o coletor termina com 0 ou 1, mesmo sem arquivo novo, e só se o passo "publicar" tiver dado certo; 2) os secrets serão criados por mim pelo site do GitHub, não por gh secret set; 3) as variáveis MINIO_* não serão renomeadas; 4) inclua também o ajuste da RES-07 em docs/01_objetivos_negocio.md (e de docs/00_persona.md, se houver menção ao MinIO local como armazenamento oficial) e da docstring de src/tcg/lake/duckdb.py, mostrando os diffs no resumo final.
+Pode salvar e seguir para a etapa 2. No resumo final, liste os arquivos de cada commit: o primeiro com ADR-008, spec, plan, AGENTS.md, tasks, docs de persona e objetivos e a evidência da primeira sync; o segundo com workflow, teste, .env.example, README, docstring, evidência da suíte e prompts.
 ```
