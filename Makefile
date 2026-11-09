@@ -2,7 +2,7 @@ PYTHON ?= .venv/bin/python
 # python3.13 do PATH; se não houver, o caminho fixo do Codespace
 PYTHON313 ?= $(shell command -v python3.13 2>/dev/null || echo /usr/local/python/3.13.8/bin/python3.13)
 
-.PHONY: setup test up sync silver gold
+.PHONY: setup test up sync silver gold reprocessar
 
 setup:
 	@test -x "$(PYTHON313)" || { echo "python3.13 não encontrado no PATH nem em /usr/local/python/3.13.8/bin" >&2; exit 1; }
@@ -35,3 +35,10 @@ silver:
 gold:
 	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
 	@set -a && . ./.env && set +a && $(PYTHON) -m tcg.gold.construtor
+
+# Apaga só silver, gold e gold_turma do group_id 24269 e reconstrói a partir do bruto (RF-13, ADR-004).
+# Executado SÓ PELO AUTOR. Sem CONFIRMAR=24269, mostra o que apagaria e sai com código 4.
+# CONFIRMAR vem só da linha de comando do make ou do ambiente, nunca do .env (definido depois dele).
+reprocessar:
+	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
+	@set -a && . ./.env && set +a && CONFIRMAR="$(CONFIRMAR)" $(PYTHON) -m tcg.reprocessar

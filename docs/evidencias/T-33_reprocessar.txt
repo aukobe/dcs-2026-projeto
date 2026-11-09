@@ -1,0 +1,16 @@
+$ .venv/bin/python -m pytest tests/integracao/test_reprocessar.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 5 items
+
+tests/integracao/test_reprocessar.py::test_sem_confirmacao_nada_muda PASSED [ 20%]
+tests/integracao/test_reprocessar.py::test_primeira_execucao_apaga_orfaos_e_so_derivadas_da_dri PASSED [ 40%]
+tests/integracao/test_reprocessar.py::test_raw_e_terceiros_mantem_o_hash PASSED [ 60%]
+tests/integracao/test_reprocessar.py::test_duas_execucoes_mesmas_chaves_contagens_e_conteudo PASSED [ 80%]
+tests/integracao/test_reprocessar.py::test_nenhuma_chave_de_grao_duplicada PASSED [100%]
+
+============================== 5 passed in 6.27s ===============================
