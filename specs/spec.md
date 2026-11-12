@@ -164,7 +164,7 @@ A gold é construída sobre a silver da DRI e as silvers de outras coleções di
 - Critério de aceite:
   - Dado o painel aberto
   - Quando o usuário escolher "dólar" e preço mínimo de US$ 5
-  - Então os valores aparecem em dólar e somem os itens com market_price abaixo de US$ 5 no primeiro dia; sem escolha, os valores estão em reais e o filtro tem o padrão da pergunta (US$ 1 na P1, US$ 5 na P5)
+  - Então os valores aparecem em dólar e somem os itens com market_price menor ou igual a US$ 5 no primeiro dia (o filtro mantém só preços estritamente acima do mínimo); sem escolha, os valores estão em reais e o filtro tem o padrão da pergunta (US$ 1 na P1, US$ 5 na P5)
 
 ### RF-15: P1, rankings de alta e queda com decomposição
 Variação % em reais entre o primeiro e o último dia, por item, decomposta em carta (r_usd), câmbio (r_cambio) e cruzado (r_usd × r_cambio). Só cartas acima de US$ 1 no primeiro dia, sem Code Card.
@@ -175,7 +175,7 @@ Variação % em reais entre o primeiro e o último dia, por item, decomposta em 
   - Então há dois rankings de até dez itens, cada um com imagem e preço inicial e atual em reais; o Code Card e o item de US$ 0,90 não aparecem; carta + câmbio + cruzado = r_brl
 
 ### RF-16: P2, selados contra cartas Double Rare em diante
-Índice base 100 no primeiro dia: média do preço dos selados contra a soma do preço das cartas das raridades da lista "Double Rare em diante"; gráfico de linhas.
+Índice base 100 no primeiro dia: média do preço dos selados contra a soma do preço das cartas das raridades da lista "Double Rare em diante"; gráfico de linhas. As duas cestas são fixas: só entram os selados e as cartas Double Rare em diante com preço em todos os dias do período; um item sem preço em algum dia sai da cesta inteira, nada é preenchido, e a quantidade de itens de cada cesta acompanha o resultado.
 - Origem: OBJ-03
 - Critério de aceite:
   - Dado preços de três dias para selados e cartas
