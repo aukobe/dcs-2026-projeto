@@ -1,0 +1,19 @@
+$ .venv/bin/python -m pytest tests/unidade/test_p1_p2.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 8 items
+
+tests/unidade/test_p1_p2.py::test_p1_dois_rankings_de_dez_sem_code_card_e_sem_item_de_90_centavos PASSED [ 12%]
+tests/unidade/test_p1_p2.py::test_p1_menos_de_dez_itens_e_item_sem_ultimo_dia_fora PASSED [ 25%]
+tests/unidade/test_p1_p2.py::test_p1_preco_minimo_estritamente_maior PASSED [ 37%]
+tests/unidade/test_p1_p2.py::test_p1_so_a_colecao_pedida PASSED          [ 50%]
+tests/unidade/test_p1_p2.py::test_p2_series_valem_100_no_primeiro_dia_e_rare_fica_fora PASSED [ 62%]
+tests/unidade/test_p1_p2.py::test_p2_em_dolar PASSED                     [ 75%]
+tests/unidade/test_p1_p2.py::test_p2_double_rare_cara_sem_preco_no_dia_2_sai_da_cesta_e_nao_derruba_o_indice PASSED [ 87%]
+tests/unidade/test_p1_p2.py::test_p2_coluna_invalida PASSED              [100%]
+
+============================== 8 passed in 0.64s ===============================
