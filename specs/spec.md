@@ -183,7 +183,7 @@ Variação % em reais entre o primeiro e o último dia, por item, decomposta em 
   - Então as duas séries valem 100 no primeiro dia, e uma carta de raridade Rare não entra na soma
 
 ### RF-17: P3, valor da coleção em índice base 100
-Valor da coleção no dia em reais (soma do `market_price_brl` de um exemplar de cada item de carta, sem Code Card), em índice base 100 por coleção, com a PTAX em índice base 100 no mesmo gráfico e a DRI destacada. A data base é o primeiro dia comum a todas as coleções exibidas.
+Valor da coleção no dia em reais (soma do `market_price_brl` de um exemplar de cada item de carta, sem Code Card), em índice base 100 por coleção, com a PTAX em índice base 100 no mesmo gráfico e a DRI destacada. A data base é o primeiro dia comum a todas as coleções exibidas. A cesta de cada coleção é fixa, como na P2: só entram os itens de carta, sem Code Card, com preço em todos os dias do período comparado (da data base ao último dia da coleção); um item sem preço em algum dia sai da cesta inteira, nada é preenchido, e a quantidade de itens de cada cesta acompanha o resultado.
 - Origem: OBJ-04, DRV-02
 - Critério de aceite:
   - Dado a gold com a DRI a partir de 01/11 e outra coleção a partir de 03/11
