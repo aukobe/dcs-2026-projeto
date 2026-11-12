@@ -1,0 +1,35 @@
+$ .venv/bin/python -m pytest tests/integracao/test_pipeline.py -v -s
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 8 items
+
+tests/integracao/test_pipeline.py::test_etapas_concluidas PASSED
+tests/integracao/test_pipeline.py::test_chaves_novas_ou_alteradas_so_nos_prefixos_permitidos PASSED
+tests/integracao/test_pipeline.py::test_objetos_de_terceiros_intactos PASSED
+tests/integracao/test_pipeline.py::test_bruto_com_hash_do_manifesto PASSED
+tests/integracao/test_pipeline.py::test_gold_le_terceiro_sem_escrever PASSED
+tests/integracao/test_pipeline.py::test_chave_raw_de_linha_sorteada_rastreavel 
+linha sorteada (semente 34): product_id=632934 acabamento=Reverse Holofoil market_price=0.33 chave_raw=raw/tcgplayer/group_id=24269/data=2026-11-03/prices.json
+PASSED
+tests/integracao/test_pipeline.py::test_toda_chave_raw_da_dri_existe_no_bruto PASSED
+tests/integracao/test_pipeline.py::test_log_sem_credenciais PASSED
+
+============================== 8 passed in 3.69s ===============================
+
+$ .venv/bin/python -m pytest -q
+import file mismatch:
+ERROR tests/unidade/test_reprocessar.py
+1 error in 0.63s
+# erro anterior à T-34: tests/unidade/test_reprocessar.py e tests/integracao/test_reprocessar.py (T-33) com o mesmo nome de módulo; nenhum teste rodou.
+# tests/integracao/test_reprocessar.py executa exclusões no MinIO descartável e só o autor o roda (AGENTS.md); suíte sem ele:
+
+$ .venv/bin/python -m pytest -q --ignore=tests/integracao/test_reprocessar.py
+.                                                                        [100%]
+289 passed in 17.10s
+
+$ docker ps -a --filter label=tcg.teste=T-19 -q | wc -l
+0
