@@ -1,0 +1,11 @@
+$ .venv/bin/python -m pytest tests/unidade/test_p3_p4.py -v
+tests/unidade/test_p3_p4.py::test_p3_todas_as_series_valem_100_no_primeiro_dia_comum_e_dri_destacada PASSED [ 16%]
+tests/unidade/test_p3_p4.py::test_p3_cesta_fixa_por_colecao_no_periodo_comparado PASSED [ 33%]
+tests/unidade/test_p3_p4.py::test_p3_so_com_a_dri PASSED                 [ 50%]
+tests/unidade/test_p3_p4.py::test_p3_coluna_invalida PASSED              [ 66%]
+tests/unidade/test_p3_p4.py::test_p4_tres_itens_somam_80_e_participacoes_somam_100 PASSED [ 83%]
+tests/unidade/test_p3_p4.py::test_p4_ultimo_dia_de_cada_colecao_calculado_separadamente PASSED [100%]
+============================== 6 passed in 0.40s ===============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+277 passed in 6.17s

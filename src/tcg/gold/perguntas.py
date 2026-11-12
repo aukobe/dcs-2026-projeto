@@ -17,6 +17,15 @@ itens cada, só cartas sem Code Card e com preço estritamente acima do mínimo
 P2 (T-36; RF-16): índice base 100 no primeiro dia da média dos selados contra a
 soma das cartas Double Rare em diante, com cestas fixas: só entram os itens com
 preço em todos os dias do período; nada é preenchido.
+
+P3 (T-37; RF-17): valor da coleção (soma de um exemplar de cada item de carta,
+sem Code Card) em índice base 100 por coleção, mais a PTAX de venda em índice
+base 100. A data base é o primeiro dia comum a todas as coleções; cada série vai
+até o último dia da sua coleção. Cesta fixa por coleção, como na P2: só itens com
+preço em todos os dias da data base ao último dia da coleção.
+
+P4 (T-37; RF-18): no último dia de cada coleção, participação de cada raridade
+no valor das cartas sem Code Card e número de itens que somam 80% do valor.
 """
 
 from __future__ import annotations
@@ -242,3 +251,175 @@ def p2_indice(
     return con.sql(
         sql, params={"group_id": group_id, "raridades": list(RARIDADES_DOUBLE_RARE_EM_DIANTE)}
     )
+
+
+SQL_P3 = """
+WITH precos AS (
+    SELECT f.group_id, f.data, f.product_id, f.acabamento, f.{coluna} AS preco
+    FROM {fato} AS f
+    JOIN {dim_produto} AS p USING (group_id, product_id)
+    WHERE p.tipo_produto = 'carta' AND p.raridade IS DISTINCT FROM 'Code Card'
+),
+dias_colecao AS (
+    SELECT DISTINCT group_id, data FROM {fato} WHERE market_price IS NOT NULL
+),
+base AS (
+    SELECT max(primeiro) AS data_base
+    FROM (SELECT group_id, min(data) AS primeiro FROM dias_colecao GROUP BY group_id)
+),
+dias AS (
+    SELECT group_id, data FROM dias_colecao
+    WHERE data >= (SELECT data_base FROM base)
+),
+n_dias AS (
+    SELECT group_id, count(*) AS n FROM dias GROUP BY group_id
+),
+completos AS (
+    SELECT pr.group_id, pr.product_id, pr.acabamento
+    FROM precos AS pr
+    JOIN dias USING (group_id, data)
+    JOIN n_dias USING (group_id)
+    WHERE pr.preco IS NOT NULL
+    GROUP BY pr.group_id, pr.product_id, pr.acabamento, n_dias.n
+    HAVING count(DISTINCT pr.data) = n_dias.n
+),
+itens AS (
+    SELECT group_id, count(*) AS itens_cesta FROM completos GROUP BY group_id
+),
+cesta AS (
+    SELECT pr.group_id, pr.data, pr.preco
+    FROM precos AS pr
+    JOIN completos USING (group_id, product_id, acabamento)
+),
+colecoes AS (
+    SELECT d.group_id, d.data, sum(c.preco) AS valor
+    FROM dias AS d
+    LEFT JOIN cesta AS c USING (group_id, data)
+    GROUP BY d.group_id, d.data
+),
+ptax AS (
+    SELECT data, cotacao_venda AS valor
+    FROM {fato_cambio}
+    WHERE cotacao_venda IS NOT NULL
+      AND data >= (SELECT data_base FROM base)
+      AND data <= (SELECT max(data) FROM dias)
+)
+SELECT
+    c.data,
+    CAST(c.group_id AS VARCHAR) AS serie,
+    c.group_id,
+    c.valor,
+    100 * c.valor / first(c.valor ORDER BY c.data) OVER (PARTITION BY c.group_id) AS indice,
+    coalesce(i.itens_cesta, 0) AS itens_cesta,
+    c.group_id = $destaque AS destaque
+FROM colecoes AS c
+LEFT JOIN itens AS i USING (group_id)
+UNION ALL
+SELECT
+    data,
+    'PTAX' AS serie,
+    NULL AS group_id,
+    valor,
+    100 * valor / first(valor ORDER BY data) OVER () AS indice,
+    NULL AS itens_cesta,
+    false AS destaque
+FROM ptax
+ORDER BY serie = 'PTAX', group_id, data
+"""
+
+SQL_P4_ULTIMO_DIA = """
+WITH ultimo AS (
+    SELECT group_id, max(data) AS data FROM {fato}
+    WHERE market_price IS NOT NULL
+    GROUP BY group_id
+),
+itens AS (
+    SELECT f.group_id, f.data, f.product_id, f.acabamento,
+           coalesce(p.raridade, 'Sem raridade') AS raridade,
+           f.market_price_brl AS valor
+    FROM {fato} AS f
+    JOIN {dim_produto} AS p USING (group_id, product_id)
+    JOIN ultimo AS u ON u.group_id = f.group_id AND u.data = f.data
+    WHERE p.tipo_produto = 'carta'
+      AND p.raridade IS DISTINCT FROM 'Code Card'
+      AND f.market_price_brl IS NOT NULL
+)
+"""
+
+SQL_P4_PARTICIPACAO = SQL_P4_ULTIMO_DIA + """
+SELECT
+    group_id, data, raridade,
+    sum(valor) AS valor,
+    count(*) AS itens,
+    sum(valor) / sum(sum(valor)) OVER (PARTITION BY group_id) AS participacao
+FROM itens
+GROUP BY group_id, data, raridade
+ORDER BY group_id, valor DESC, raridade
+"""
+
+SQL_P4_CONCENTRACAO = SQL_P4_ULTIMO_DIA + """,
+acumulado AS (
+    SELECT
+        group_id, data, valor,
+        sum(valor) OVER (
+            PARTITION BY group_id ORDER BY valor DESC, product_id, acabamento
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS acumulado,
+        sum(valor) OVER (PARTITION BY group_id) AS total
+    FROM itens
+)
+SELECT
+    group_id, data,
+    max(total) AS valor_total,
+    count(*) AS itens_total,
+    count(*) FILTER (WHERE acumulado - valor < $fracao * total - 1e-9 * abs(total)) AS itens_80
+FROM acumulado
+GROUP BY group_id, data
+ORDER BY group_id
+"""
+
+
+def p3_indice(
+    con: duckdb.DuckDBPyConnection,
+    fato: str,
+    dim_produto: str,
+    fato_cambio: str,
+    coluna: str = "market_price_brl",
+    group_id_destaque: int = 24269,
+) -> duckdb.DuckDBPyRelation:
+    """Índice base 100 da P3 (RF-17), em formato longo: uma linha por série × dia.
+
+    Uma série por coleção (`serie` = group_id em texto) mais a série `'PTAX'`
+    (`cotacao_venda` de `fato_cambio`). Todas valem 100 na data base, o primeiro
+    dia comum às coleções; nada antes dela aparece. Cesta fixa por coleção:
+    cartas sem Code Card com `coluna` não nula em todos os dias da data base ao
+    último dia da coleção. Colunas: `data`, `serie`, `group_id` (nulo na PTAX),
+    `valor`, `indice`, `itens_cesta` (nulo na PTAX) e `destaque` (só a DRI).
+    """
+    if coluna not in COLUNAS_PRECO_P2:
+        raise ValueError(f"coluna deve ser uma de {COLUNAS_PRECO_P2}: {coluna!r}")
+    sql = SQL_P3.format(fato=fato, dim_produto=dim_produto, fato_cambio=fato_cambio, coluna=coluna)
+    return con.sql(sql, params={"destaque": group_id_destaque})
+
+
+def p4_concentracao(
+    con: duckdb.DuckDBPyConnection,
+    fato: str,
+    dim_produto: str,
+    fracao: float = 0.8,
+) -> tuple[duckdb.DuckDBPyRelation, duckdb.DuckDBPyRelation]:
+    """Concentração do valor da P4 (RF-18): (participacao, concentracao).
+
+    Só o último dia com preço de cada coleção, cartas sem Code Card, em
+    `market_price_brl`. `participacao`: `group_id`, `data`, `raridade` (nula vira
+    "Sem raridade"), `valor`, `itens` e `participacao` (fração; soma 1 por
+    coleção). `concentracao`: `group_id`, `data`, `valor_total`, `itens_total` e
+    `itens_80`, o menor número de itens, do mais caro ao mais barato, cuja soma
+    chega a `fracao` do valor total.
+    """
+    formato = {"fato": fato, "dim_produto": dim_produto}
+    participacao = con.sql(SQL_P4_PARTICIPACAO.format(**formato))
+    concentracao = con.sql(
+        SQL_P4_CONCENTRACAO.format(**formato), params={"fracao": float(fracao)}
+    )
+    return participacao, concentracao
