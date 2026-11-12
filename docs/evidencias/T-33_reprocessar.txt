@@ -1,4 +1,4 @@
-$ .venv/bin/python -m pytest tests/integracao/test_reprocessar.py -v
+$ .venv/bin/python -m pytest tests/integracao/test_reprocessar_integracao.py -v
 ============================= test session starts ==============================
 platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
 cachedir: .pytest_cache
