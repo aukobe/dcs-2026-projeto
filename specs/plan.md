@@ -297,6 +297,7 @@ src/tcg/
     construtor.py                 # Construtor da silver e Escritor Parquet
   gold/
     sql/                          # SQL do esquema estrela e ASOF JOIN
+    perguntas.py                  # Métricas das perguntas P1 a P5 (decomposição da P1)
     carteiras.py                  # Carteiras (funções puras)
     construtor.py                 # Construtor da gold e Escritor da gold
   cobertura/

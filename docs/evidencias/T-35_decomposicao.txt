@@ -1,0 +1,19 @@
+$ .venv/bin/python -m pytest tests/unidade/test_decomposicao.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.13.8, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/dcs-2026-projeto/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/dcs-2026-projeto
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 8 items
+
+tests/unidade/test_decomposicao.py::test_caso_conhecido_10_para_12_ptax_5_para_5_50 PASSED [ 12%]
+tests/unidade/test_decomposicao.py::test_caso_100_para_110_ptax_5_para_5_25 PASSED [ 25%]
+tests/unidade/test_decomposicao.py::test_identidades_em_casos_gerados PASSED [ 37%]
+tests/unidade/test_decomposicao.py::test_preco_ou_cotacao_nao_positivos_levantam_erro[args0] PASSED [ 50%]
+tests/unidade/test_decomposicao.py::test_preco_ou_cotacao_nao_positivos_levantam_erro[args1] PASSED [ 62%]
+tests/unidade/test_decomposicao.py::test_preco_ou_cotacao_nao_positivos_levantam_erro[args2] PASSED [ 75%]
+tests/unidade/test_decomposicao.py::test_preco_ou_cotacao_nao_positivos_levantam_erro[args3] PASSED [ 87%]
+tests/unidade/test_decomposicao.py::test_sql_sobre_fato_em_memoria PASSED [100%]
+
+============================== 8 passed in 0.21s ===============================
