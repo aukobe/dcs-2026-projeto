@@ -36,6 +36,9 @@ PRODUTOS_DRI = {
     **{10 + i: (f"Alta {i:02d}", "carta", "Double Rare", 2.0 + i, (2.0 + i) * 1.05) for i in range(1, 13)},
     **{30 + i: (f"Queda {i}", "carta", "Ultra Rare", 10.0, 7.0) for i in range(1, 4)},
 }
+# Só com preço em 01/11 e 04/11: sem retorno diário válido, volatilidade nula, fora do
+# gráfico da P5; é o item mais caro da P5, mas não pode ser o padrão do seletor
+PRODUTOS_LACUNA = {50: ("Carta com lacunas", "carta", "Ultra Rare", 400.0, 424.0)}
 # A outra coleção começa em 02/11: o primeiro dia comum da P3 é 02/11
 PRODUTOS_OUTRA = {
     1: ("Outra carta A", "carta", "Rare", 20.0, 25.0),
@@ -91,7 +94,7 @@ def _gravar(con, sql, destino):
 def _gold(pasta: Path, com_outra: bool) -> Path:
     con = duckdb.connect()
     fato, prod = [], []
-    colecoes = [(GID, PRODUTOS_DRI, DIAS)]
+    colecoes = [(GID, PRODUTOS_DRI, DIAS), (GID, PRODUTOS_LACUNA, [DIAS[0], DIAS[-1]])]
     if com_outra:
         colecoes.append((OUTRA, PRODUTOS_OUTRA, DIAS[1:]))
     for gid, produtos, dias in colecoes:
@@ -263,7 +266,7 @@ def test_p2_indice_base_100_da_dri(painel):
     spec, dados = _grafico(at, "Índice base 100")
     assert spec["mark"]["invalid"] == "break-paths-show-domains"
     series = set(dados["serie"])
-    assert series == {"Selados (média)", "Double Rare em diante (soma)"}
+    assert series == {"Selados (cesta fixa)", "Double Rare em diante (cesta fixa)"}
     for s in series:
         primeiro = [v for d, v, x in zip(dados["data"], dados["valor"], dados["serie"]) if x == s and d.date() == DIAS[0]]
         assert primeiro == [pytest.approx(100.0)]
@@ -362,3 +365,60 @@ def test_painel_nao_grava_nada(painel):
     at.run()
     assert not at.exception
     assert _hashes(pasta) == antes
+
+
+# ---------------------------------------------------------------- ajuste visual (dados reais)
+
+
+def test_p3_eixo_y_nao_comeca_em_zero(painel):
+    at, _ = painel()
+    spec, _ = _grafico(at, TITULO_P3)
+    assert spec["encoding"]["y"]["scale"]["zero"] is False
+
+
+def test_eixo_data_tem_um_rotulo_por_dia_sem_repeticao():
+    app = _carregar_modulo()
+    d12, d13 = dt.date(2026, 11, 12), dt.date(2026, 11, 13)
+    eixo = app.eixo_data([d12, d13, d13, None]).get("axis").to_dict()
+    assert eixo["values"] == [
+        {"year": 2026, "month": 11, "date": 12, "utc": True},
+        {"year": 2026, "month": 11, "date": 13, "utc": True},
+    ]
+    assert eixo["format"] == "%d/%m"
+
+
+def test_graficos_de_linha_tem_um_tick_por_dia_dos_dados(painel):
+    at, _ = painel()
+    linhas = [(s, d) for s, d in _graficos(at) if s["mark"]["type"] == "line"]
+    assert len(linhas) == 3
+    for spec, dados in linhas:
+        valores = [(v["year"], v["month"], v["date"]) for v in spec["encoding"]["x"]["axis"]["values"]]
+        assert len(valores) == len(set(valores))  # nenhuma data repetida
+        dias = {(x.year, x.month, x.day) for x in dados["data"]}
+        assert set(valores) == dias
+
+
+def test_p5_seletor_lista_so_itens_do_grafico(painel):
+    at, _ = painel()
+    _, dados = _grafico(at, "Retorno no período")
+    assert "Carta com lacunas" not in set(dados["nome"])
+    seletor = at.selectbox(key="item_p5")
+    assert len(seletor.options) == len(dados["nome"])
+    assert not any("Carta com lacunas" in o for o in seletor.options)
+    assert seletor.options[0].startswith("Carta mais cara")  # maior preço entre os do gráfico
+    assert seletor.value == 0
+
+
+def test_p2_eixo_y_sem_zero_e_legenda_inteira(painel):
+    at, _ = painel()
+    spec, _ = _grafico(at, "Índice base 100")
+    assert spec["encoding"]["y"]["scale"]["zero"] is False
+    legenda = spec["encoding"]["color"]["legend"]
+    assert legenda["labelLimit"] == 0  # rótulo sem corte
+    assert legenda["orient"] == "bottom"
+
+
+def test_p4_rotulos_das_colecoes_na_horizontal(painel):
+    at, _ = painel()
+    spec, _ = _grafico(at, "Participação por raridade")
+    assert spec["encoding"]["x"]["axis"]["labelAngle"] == 0

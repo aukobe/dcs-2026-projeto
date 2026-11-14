@@ -78,6 +78,10 @@ AVISO_OUTRAS_COLECOES = (
     "Faltam dados de outras coleções: exibindo só a DRI (RF-22). "
     "A comparação entre coleções fica parcial até outras silvers estarem no bucket."
 )
+SERIE_P2_SELADOS = "Selados (cesta fixa)"
+SERIE_P2_RARAS = "Double Rare em diante (cesta fixa)"
+# Legenda abaixo do gráfico e sem limite de largura do rótulo: nada aparece cortado
+LEGENDA_INTEIRA = alt.Legend(orient="bottom", direction="vertical", labelLimit=0)
 ABAS = ("Itens", "P1: alta e queda", "P2: selados × raras", "P3: coleções", "P4: concentração", "P5: risco")
 
 
@@ -182,7 +186,22 @@ def eixo_numero(titulo: str, formato: str = ",.2f") -> alt.Axis:
 
 
 # Datas em UTC: o Arrow manda meia-noite UTC; em horário local o dia mudaria.
-EIXO_DATA = {"timeUnit": "utcyearmonthdate", "title": "Data", "axis": alt.Axis(format="%d/%m", labelAngle=0)}
+def eixo_data(datas) -> dict:
+    """Eixo x de datas em dd/mm com um rótulo por dia, sem repetição.
+
+    Os ticks são os próprios dias dos dados (`values`), em vez dos ticks
+    automáticos do Vega, que com poucos dias caem a cada 12 h e repetem a data.
+    Com muitos dias, `labelOverlap` esconde os rótulos que se sobrepõem.
+    """
+    dias = sorted({pd.Timestamp(d).date() for d in datas if not _nulo(d)})
+    valores = [{"year": d.year, "month": d.month, "date": d.day, "utc": True} for d in dias]
+    return {
+        "timeUnit": "utcyearmonthdate",
+        "title": "Data",
+        "axis": alt.Axis(format="%d/%m", labelAngle=0, values=valores, labelOverlap=True),
+    }
+
+
 TOOLTIP_DATA = alt.Tooltip("data:T", timeUnit="utcyearmonthdate", title="Data", format="%d/%m/%Y")
 
 
@@ -348,20 +367,24 @@ def grafico_linhas(
     cor: str | None = None,
     formato_y: str = ",.2f",
     destaque: bool = False,
+    zero: bool = True,
+    legenda: alt.Legend | None = None,
 ) -> alt.Chart:
     """Linhas por data que se interrompem nos valores nulos (RF-21).
 
     `dados` tem `data` e `valor` (e a coluna `cor`, se houver). Com `destaque`,
-    usa as colunas `espessura`, `opacidade` e `tipo` (coleção ou PTAX).
+    usa as colunas `espessura`, `opacidade` e `tipo` (coleção ou PTAX). Com
+    `zero=False`, o eixo y não começa em 0 (índices em torno de 100). `legenda`
+    substitui a legenda padrão da cor.
     """
     dados = dados.assign(valor_fmt=dados["valor"].map(lambda v: formatar_numero(v)))
     tooltip = [TOOLTIP_DATA, alt.Tooltip("valor_fmt:N", title=rotulo_y)]
     codificacao = {
-        "x": alt.X("data:T", **EIXO_DATA),
-        "y": alt.Y("valor:Q", axis=eixo_numero(rotulo_y, formato_y)),
+        "x": alt.X("data:T", **eixo_data(dados["data"])),
+        "y": alt.Y("valor:Q", axis=eixo_numero(rotulo_y, formato_y), scale=alt.Scale(zero=zero)),
     }
     if cor:
-        codificacao["color"] = alt.Color(f"{cor}:N", title=None)
+        codificacao["color"] = alt.Color(f"{cor}:N", title=None, **({"legend": legenda} if legenda else {}))
         tooltip.insert(0, alt.Tooltip(f"{cor}:N", title="Série"))
     if destaque:
         codificacao["strokeWidth"] = alt.StrokeWidth("espessura:Q", scale=None, legend=None)
@@ -476,17 +499,22 @@ def secao_p2(con, gold, moeda: str) -> None:
     n_sel, n_rar = int(p2["itens_selados"].iloc[0]), int(p2["itens_double_rare_mais"].iloc[0])
     st.caption(
         f"Índice base 100 no primeiro dia, em {moeda} ({simbolo}), cestas fixas da DRI: "
-        f"{n_sel} selados (média) e {n_rar} cartas Double Rare em diante (soma)."
+        f"{n_sel} selados e {n_rar} cartas Double Rare em diante. O RF-16 usa a média dos "
+        "selados e a soma das cartas; com a cesta fixa, a média é a soma dividida por um número "
+        "constante de itens, e o índice é o mesmo."
     )
     longo = pd.concat(
         [
-            p2[["data"]].assign(serie="Selados (média)", valor=p2["indice_selados"]),
-            p2[["data"]].assign(serie="Double Rare em diante (soma)", valor=p2["indice_double_rare_mais"]),
+            p2[["data"]].assign(serie=SERIE_P2_SELADOS, valor=p2["indice_selados"]),
+            p2[["data"]].assign(serie=SERIE_P2_RARAS, valor=p2["indice_double_rare_mais"]),
         ],
         ignore_index=True,
     )
     serie = completar_series(longo, gold["dim_data"])
-    st.altair_chart(grafico_linhas(serie, "Índice base 100", "Índice", cor="serie"), width="stretch")
+    st.altair_chart(
+        grafico_linhas(serie, "Índice base 100", "Índice", cor="serie", zero=False, legenda=LEGENDA_INTEIRA),
+        width="stretch",
+    )
 
 
 def secao_p3(con, gold, moeda: str, rotulos: dict[int, str], so_dri: bool) -> None:
@@ -516,7 +544,9 @@ def secao_p3(con, gold, moeda: str, rotulos: dict[int, str], so_dri: bool) -> No
     serie["opacidade"] = serie["destaque"].map({True: 1.0, False: 0.6})
     serie["tipo"] = serie["serie"].map(lambda s: "PTAX" if s == "PTAX" else "coleção")
     st.altair_chart(
-        grafico_linhas(serie, "Valor da coleção e PTAX (base 100)", "Índice", cor="serie", destaque=True),
+        grafico_linhas(
+            serie, "Valor da coleção e PTAX (base 100)", "Índice", cor="serie", destaque=True, zero=False
+        ),
         width="stretch",
     )
 
@@ -538,7 +568,7 @@ def secao_p4(con, rotulos: dict[int, str], so_dri: bool) -> None:
         alt.Chart(participacao, title="Participação por raridade (cartas sem Code Card)")
         .mark_bar()
         .encode(
-            x=alt.X("colecao:N", title="Coleção"),
+            x=alt.X("colecao:N", title="Coleção", axis=alt.Axis(labelAngle=0)),
             y=alt.Y("participacao:Q", stack="normalize", axis=alt.Axis(title="Participação", format=".0%")),
             color=alt.Color("raridade:N", title="Raridade"),
             tooltip=[
@@ -614,7 +644,8 @@ def secao_p5(con, moeda: str, minimo: float, rotulos: dict[int, str], so_dri: bo
             )
         )
         st.altair_chart(grafico, width="stretch")
-    seletor_item(p5, "item_p5", lambda r: f"{r['nome']} ({r['acabamento']}), {r['colecao']}")
+    # só os itens do gráfico (volatilidade não nula); padrão: o de maior preço entre eles
+    seletor_item(pontos, "item_p5", lambda r: f"{r['nome']} ({r['acabamento']}), {r['colecao']}")
 
 
 # ---------------------------------------------------------------- página
