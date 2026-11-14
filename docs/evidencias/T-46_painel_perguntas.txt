@@ -1,0 +1,18 @@
+$ .venv/bin/python -m pytest tests/unidade/test_painel_perguntas.py -v
+tests/unidade/test_painel_perguntas.py::test_rede_continua_bloqueada_neste_modulo PASSED [  7%]
+tests/unidade/test_painel_perguntas.py::test_formatar_moeda_em_ptbr PASSED [ 15%]
+tests/unidade/test_painel_perguntas.py::test_formatar_percentual_e_data PASSED [ 23%]
+tests/unidade/test_painel_perguntas.py::test_seis_abas_renderizam_em_reais_e_em_dolar PASSED [ 30%]
+tests/unidade/test_painel_perguntas.py::test_p1_rankings_com_decomposicao_e_filtros PASSED [ 38%]
+tests/unidade/test_painel_perguntas.py::test_p1_em_dolar_formata_us PASSED [ 46%]
+tests/unidade/test_painel_perguntas.py::test_p2_indice_base_100_da_dri PASSED [ 53%]
+tests/unidade/test_painel_perguntas.py::test_p3_base_comum_ptax_e_dri_destacada PASSED [ 61%]
+tests/unidade/test_painel_perguntas.py::test_p4_participacao_soma_100_e_itens_80 PASSED [ 69%]
+tests/unidade/test_painel_perguntas.py::test_p5_dispersao_volatilidade_x_retorno_com_tooltip PASSED [ 76%]
+tests/unidade/test_painel_perguntas.py::test_sem_outras_colecoes_p3_p4_p5_avisam_e_mostram_so_a_dri PASSED [ 84%]
+tests/unidade/test_painel_perguntas.py::test_eixos_de_data_em_dd_mm_e_utc PASSED [ 92%]
+tests/unidade/test_painel_perguntas.py::test_painel_nao_grava_nada PASSED [100%]
+============================== 13 passed in 7.29s ==============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+308 passed in 19.15s

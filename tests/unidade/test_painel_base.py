@@ -91,7 +91,8 @@ def _gold(pasta: Path, com_imagem_e_link: bool = False) -> Path:
                 f"(DATE '{dia}', {pid}, {GID}, 'Normal', {usd}, {COT[dia]}, {usd * COT[dia]})"
             )
     # Outra coleção no fato e na dim_produto: não aparece na base da DRI
-    linhas_prod.append("(99999, 1, 'Carta de outra colecao', 'carta', 'Rare', '001/100', NULL, NULL)")
+    extra = "'https://img.exemplo/outra.jpg', 'https://tcg.exemplo/outra'" if com_imagem_e_link else "NULL, NULL"
+    linhas_prod.append(f"(99999, 1, 'Carta de outra colecao', 'carta', 'Rare', '001/100', {extra})")
     linhas_fato.append(f"(DATE '{D1}', 1, 99999, 'Normal', 500.0, 5.0, 2500.0)")
     linhas_fato.append(f"(DATE '{D3}', 1, 99999, 'Normal', 900.0, 5.5, 4950.0)")
 
@@ -117,6 +118,15 @@ def _gold(pasta: Path, com_imagem_e_link: bool = False) -> Path:
         con,
         f"SELECT CAST(unnest(generate_series(DATE '{D1}', DATE '{D3}', INTERVAL 1 DAY)) AS DATE) AS data",
         pasta / "dim_data.parquet",
+    )
+    # fato_cambio_diario (lido pela P3 desde a T-46): 02/11 com a PTAX de 01/11
+    _gravar(
+        con,
+        "SELECT CAST(data AS DATE) AS data, compra::DOUBLE AS cotacao_compra, venda::DOUBLE AS cotacao_venda, "
+        "CAST(data_ptax AS DATE) AS data_ptax, 0.0::DOUBLE AS cdi_taxa_dia, false AS cdi_pendente FROM (VALUES "
+        f"('{D1}', 4.99, 5.0, '{D1}'), ('2026-11-02', 4.99, 5.0, '{D1}'), ('{D3}', 5.49, 5.5, '{D3}')"
+        ") AS t(data, compra, venda, data_ptax)",
+        pasta / "fato_cambio_diario.parquet",
     )
     _gravar(
         con,
@@ -163,8 +173,8 @@ def test_padrao_em_reais_e_filtro_da_p1(painel):
     assert "Booster Box" not in _ids_na_tabela(at)
     assert "Carta de outra colecao" not in _ids_na_tabela(at)
     linha = tabela[tabela["Produto"] == "Carta mais cara"].iloc[0]
-    assert linha["Preço inicial (R$)"] == pytest.approx(100.0)  # US$ 20 × 5,00
-    assert linha["Preço atual (R$)"] == pytest.approx(165.0)  # US$ 30 × 5,50
+    assert linha["Preço inicial (R$)"] == "R$ 100,00"  # US$ 20 × 5,00 (formato pt-BR, T-46)
+    assert linha["Preço atual (R$)"] == "R$ 165,00"  # US$ 30 × 5,50
 
 
 def test_dolar_e_minimo_5_trocam_moeda_e_removem_itens(painel):
@@ -178,8 +188,8 @@ def test_dolar_e_minimo_5_trocam_moeda_e_removem_itens(painel):
     assert not any("R$" in c for c in tabela.columns)
     assert _ids_na_tabela(at) == {"Carta 5,01 dolares", "Carta mais cara"}  # US$ 5,00 sai (estrito)
     linha = tabela[tabela["Produto"] == "Carta mais cara"].iloc[0]
-    assert linha["Preço inicial (US$)"] == pytest.approx(20.0)
-    assert linha["Preço atual (US$)"] == pytest.approx(30.0)
+    assert linha["Preço inicial (US$)"] == "US$ 20,00"
+    assert linha["Preço atual (US$)"] == "US$ 30,00"
 
 
 def _script_p5(caminho):
@@ -215,7 +225,11 @@ def test_completar_calendario_deixa_dia_sem_coleta_nulo():
 
 def test_dia_sem_coleta_fica_sem_ponto_no_grafico(painel):
     at, _ = painel()
-    graficos = at.get("vega_lite_chart")
+    # com as abas da T-46 há vários gráficos: o da série do item é localizado pelo título
+    graficos = [
+        g for g in at.get("vega_lite_chart")
+        if json.loads(g.proto.spec).get("title", "").startswith("Preço de ")
+    ]
     assert len(graficos) == 1
     proto = graficos[0].proto
     spec = json.loads(proto.spec)
@@ -251,8 +265,10 @@ def test_imagem_e_link_quando_preenchidos(painel):
     legendas = [c.value for c in at.caption]
     assert "imagem indisponível" not in legendas and "link indisponível" not in legendas
     imagens = at.get("image")
-    assert len(imagens) == 1
+    # base e P1 (T-46) mostram o mais caro da DRI; a P5 mostra o mais caro de todas as coleções
+    assert len(imagens) >= 1
     assert imagens[0].proto.imgs[0].url == "https://img.exemplo/5.jpg"
+    assert {i.proto.imgs[0].url for i in imagens} <= {"https://img.exemplo/5.jpg", "https://img.exemplo/outra.jpg"}
     assert any("https://tcg.exemplo/5" in m.value for m in at.markdown)
 
 
