@@ -1,0 +1,10 @@
+$ .venv/bin/python -m pytest tests/unidade/test_p5.py -v
+tests/unidade/test_p5.py::test_p5_retorno_e_volatilidade_tres_dias_seguidos[market_price] PASSED [ 12%]
+tests/unidade/test_p5.py::test_p5_retorno_e_volatilidade_tres_dias_seguidos[market_price_brl] PASSED [ 25%]
+tests/unidade/test_p5.py::test_p5_descarta_retorno_que_atravessa_lacuna PASSED [ 37%]
+tests/unidade/test_p5.py::test_p5_lacuna_de_coleta_so_conta_o_retorno_antes_dela PASSED [ 50%]
+tests/unidade/test_p5.py::test_p5_item_sem_preco_no_ultimo_dia_da_colecao_fica_fora PASSED [ 62%]
+tests/unidade/test_p5.py::test_p5_filtro_estrito_no_primeiro_dia_e_sem_code_card PASSED [ 75%]
+tests/unidade/test_p5.py::test_p5_todas_as_colecoes_com_janela_propria_e_group_id PASSED [ 87%]
+tests/unidade/test_p5.py::test_p5_coluna_invalida PASSED                 [100%]
+============================== 8 passed in 0.39s ===============================

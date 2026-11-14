@@ -200,6 +200,7 @@ No último dia, participação de cada raridade no valor total e número de iten
 
 ### RF-19: P5, retorno contra volatilidade
 Retorno no período contra o desvio-padrão dos retornos diários, só cartas acima de US$ 5; dispersão com cor por coleção e imagem ao passar o cursor. Só contam retornos entre dias consecutivos com preço; os que atravessam uma lacuna são descartados.
+Janela da coleção: o item entra só se tiver preço no primeiro e no último dia da sua coleção, o filtro de US$ 5 (estritamente acima) usa o market_price do primeiro dia da coleção e o retorno no período vai do primeiro ao último dia da coleção; uma lacuna no meio só remove os retornos diários que a atravessam. A volatilidade é o desvio-padrão amostral.
 - Origem: OBJ-04
 - Critério de aceite:
   - Dado um item com preços 10, 11 e 9,9 em três dias consecutivos

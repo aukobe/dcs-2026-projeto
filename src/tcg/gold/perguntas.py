@@ -26,6 +26,12 @@ preço em todos os dias da data base ao último dia da coleção.
 
 P4 (T-37; RF-18): no último dia de cada coleção, participação de cada raridade
 no valor das cartas sem Code Card e número de itens que somam 80% do valor.
+
+P5 (T-38; RF-19): por item, retorno do primeiro ao último dia da coleção contra a
+volatilidade (desvio-padrão amostral dos retornos diários). Janela da coleção: só
+cartas sem Code Card com preço nos dois extremos e `market_price` estritamente
+acima do mínimo (padrão US$ 5) no primeiro dia. Retornos diários só entre dias de
+calendário seguidos com preço; os que atravessam lacuna são descartados.
 """
 
 from __future__ import annotations
@@ -423,3 +429,84 @@ def p4_concentracao(
         SQL_P4_CONCENTRACAO.format(**formato), params={"fracao": float(fracao)}
     )
     return participacao, concentracao
+
+
+SQL_P5 = """
+WITH janela AS (
+    SELECT group_id, min(data) AS data_inicial, max(data) AS data_final
+    FROM {fato} WHERE market_price IS NOT NULL
+    GROUP BY group_id
+),
+precos AS (
+    SELECT f.group_id, f.product_id, f.acabamento, f.data, f.market_price AS usd, f.{coluna} AS preco
+    FROM {fato} AS f
+    JOIN {dim_produto} AS p USING (group_id, product_id)
+    WHERE p.tipo_produto = 'carta'
+      AND p.raridade IS DISTINCT FROM 'Code Card'
+      AND f.market_price IS NOT NULL
+      AND f.{coluna} IS NOT NULL
+),
+extremos AS (
+    SELECT j.group_id, pi.product_id, pi.acabamento, j.data_inicial, j.data_final,
+           pi.usd AS usd_inicial, pi.preco AS preco_inicial, pf.preco AS preco_final
+    FROM janela AS j
+    JOIN precos AS pi ON pi.group_id = j.group_id AND pi.data = j.data_inicial
+    JOIN precos AS pf ON pf.group_id = j.group_id AND pf.data = j.data_final
+                     AND pf.product_id = pi.product_id AND pf.acabamento = pi.acabamento
+    WHERE pi.usd > $preco_minimo AND pi.preco > 0
+),
+anteriores AS (
+    SELECT group_id, product_id, acabamento, data, preco,
+           lag(data) OVER w AS data_anterior,
+           lag(preco) OVER w AS preco_anterior
+    FROM precos
+    WINDOW w AS (PARTITION BY group_id, product_id, acabamento ORDER BY data)
+),
+diarios AS (
+    SELECT group_id, product_id, acabamento, preco / preco_anterior - 1 AS retorno_diario
+    FROM anteriores
+    WHERE data - data_anterior = 1 AND preco_anterior > 0
+),
+volatilidade AS (
+    SELECT group_id, product_id, acabamento,
+           stddev_samp(retorno_diario) AS volatilidade,
+           count(*) AS n_retornos
+    FROM diarios
+    GROUP BY group_id, product_id, acabamento
+)
+SELECT
+    e.group_id, e.product_id, e.acabamento,
+    p.nome, p.raridade, p.image_url, p.url,
+    e.data_inicial, e.data_final,
+    e.usd_inicial, e.preco_inicial, e.preco_final,
+    e.preco_final / e.preco_inicial - 1 AS retorno,
+    v.volatilidade,
+    coalesce(v.n_retornos, 0) AS n_retornos
+FROM extremos AS e
+JOIN {dim_produto} AS p USING (group_id, product_id)
+LEFT JOIN volatilidade AS v USING (group_id, product_id, acabamento)
+ORDER BY e.group_id, e.product_id, e.acabamento
+"""
+
+
+def p5_retorno_volatilidade(
+    con: duckdb.DuckDBPyConnection,
+    fato: str,
+    dim_produto: str,
+    coluna: str = "market_price_brl",
+    preco_minimo_usd: float = 5.0,
+) -> duckdb.DuckDBPyRelation:
+    """Retorno contra volatilidade da P5 (RF-19), uma linha por item de todas as coleções.
+
+    Janela da coleção: o item entra só com preço no primeiro e no último dia com
+    preço da sua coleção e com `market_price` estritamente acima de
+    `preco_minimo_usd` no primeiro dia; só cartas sem Code Card. `retorno` vai do
+    primeiro ao último dia da coleção. `volatilidade` é o desvio-padrão amostral
+    dos retornos diários entre dias de calendário seguidos com preço; retornos
+    que atravessam lacuna são descartados (nula com menos de dois retornos).
+    `coluna` é `market_price_brl` (reais, padrão) ou `market_price` (dólar).
+    """
+    if coluna not in COLUNAS_PRECO_P2:
+        raise ValueError(f"coluna deve ser uma de {COLUNAS_PRECO_P2}: {coluna!r}")
+    sql = SQL_P5.format(fato=fato, dim_produto=dim_produto, coluna=coluna)
+    return con.sql(sql, params={"preco_minimo": float(preco_minimo_usd)})
