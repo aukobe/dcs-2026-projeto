@@ -1,0 +1,15 @@
+$ .venv/bin/python -m pytest tests/unidade/test_painel_base.py -v
+tests/unidade/test_painel_base.py::test_rede_continua_bloqueada_neste_modulo PASSED [ 10%]
+tests/unidade/test_painel_base.py::test_padrao_em_reais_e_filtro_da_p1 PASSED [ 20%]
+tests/unidade/test_painel_base.py::test_dolar_e_minimo_5_trocam_moeda_e_removem_itens PASSED [ 30%]
+tests/unidade/test_painel_base.py::test_padrao_do_filtro_na_p5_vale_5 PASSED [ 40%]
+tests/unidade/test_painel_base.py::test_completar_calendario_deixa_dia_sem_coleta_nulo PASSED [ 50%]
+tests/unidade/test_painel_base.py::test_dia_sem_coleta_fica_sem_ponto_no_grafico PASSED [ 60%]
+tests/unidade/test_painel_base.py::test_aviso_de_periodo_curto PASSED    [ 70%]
+tests/unidade/test_painel_base.py::test_imagem_e_link_indisponiveis_quando_nulos PASSED [ 80%]
+tests/unidade/test_painel_base.py::test_imagem_e_link_quando_preenchidos PASSED [ 90%]
+tests/unidade/test_painel_base.py::test_painel_nao_grava_nada PASSED     [100%]
+============================== 10 passed in 3.21s ==============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+287 passed in 10.81s

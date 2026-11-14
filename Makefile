@@ -2,7 +2,7 @@ PYTHON ?= .venv/bin/python
 # python3.13 do PATH; se não houver, o caminho fixo do Codespace
 PYTHON313 ?= $(shell command -v python3.13 2>/dev/null || echo /usr/local/python/3.13.8/bin/python3.13)
 
-.PHONY: setup test up sync silver gold reprocessar
+.PHONY: setup test up sync silver gold reprocessar painel
 
 setup:
 	@test -x "$(PYTHON313)" || { echo "python3.13 não encontrado no PATH nem em /usr/local/python/3.13.8/bin" >&2; exit 1; }
@@ -42,3 +42,9 @@ gold:
 reprocessar:
 	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
 	@set -a && . ./.env && set +a && CONFIRMAR="$(CONFIRMAR)" $(PYTHON) -m tcg.reprocessar
+
+# Painel (Streamlit): só lê a gold de gold/group_id=24269/ (RF-14 a RF-22).
+# O .env é carregado só no ambiente da receita; nenhum valor é impresso (RNF-08).
+painel:
+	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
+	@set -a && . ./.env && set +a && $(PYTHON) -m streamlit run dashboard/app.py
