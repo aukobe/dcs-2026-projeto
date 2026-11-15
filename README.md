@@ -14,7 +14,7 @@ Pipeline diário que coleta produtos e preços da coleção DRI pelo TCGCSV, a P
 
 O armazenamento oficial de bruto, silver, gold e gold_turma é o bucket `tcg` do data lake da turma, um RustFS compatível com S3 (ADR-008):
 
-- endereço: `https://s3.afonsolelis.tech` (região `us-east-1`, endereçamento por caminho, TLS);
+- endereço: `https://lake-aulas-mackenzie.afonsolelis.tech` (região `us-east-1`, endereçamento por caminho, TLS);
 - escrita só nos prefixos com `group_id=24269`; as coleções dos colegas são só lidas;
 - a branch `dados-raw` continua como fonte de verdade do bruto. O workflow da coleta sincroniza a branch com o data lake todo dia, depois do push; `make sync` faz o mesmo sob demanda e nunca sobrescreve uma chave existente.
 
@@ -34,7 +34,7 @@ MINIO_ACCESS_KEY=<usuário raiz escolhido para o MinIO local>
 MINIO_SECRET_KEY=<senha raiz escolhida para o MinIO local>
 ```
 
-Volte o `.env` para `s3.afonsolelis.tech` e `MINIO_SECURE=true` antes de rodar `make sync`, `make silver` ou `make gold` para valer. Os testes de integração (`make test`) usam um MinIO descartável próprio e não tocam em nenhum dos dois.
+Volte o `.env` para `lake-aulas-mackenzie.afonsolelis.tech` e `MINIO_SECURE=true` antes de rodar `make sync`, `make silver` ou `make gold` para valer. Os testes de integração (`make test`) usam um MinIO descartável próprio e não tocam em nenhum dos dois.
 
 ## Como rodar
 

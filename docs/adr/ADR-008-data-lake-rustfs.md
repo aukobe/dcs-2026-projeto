@@ -2,7 +2,7 @@
 
 ## Status
 
-Aceito em 2026-11-07. Substitui partes do ADR-001 e do ADR-002:
+Aceito em 2026-11-07; revisado em 2026-11-15 (ver "Revisões"). Substitui partes do ADR-001 e do ADR-002:
 - ADR-001: deixam de valer o destino do Sincronizador (MinIO local), a força "Escopo de escrita", o descarte da alternativa "Gravar direto no MinIO da turma", a tática "Limitar exposição" na forma "o workflow não usa nenhum secret", a consequência positiva "Nenhum secret no agendador" e a evidência "nenhum `secrets.`" do teste do workflow. Continuam valendo a branch `dados-raw` como fonte de verdade do bruto, o commit `dados(coleta)` e o push só nessa branch.
 - ADR-002: deixa de valer o papel do MinIO local como ambiente de trabalho de silver, gold e painel, inclusive o cenário do RF-05 em `localhost:9000`. Continuam valendo a imagem, a tag fixada, o healthcheck e o uso da mesma imagem nos testes de integração.
 
@@ -43,7 +43,7 @@ Forças em jogo:
 
 ## Decisão e táticas
 
-O bucket `tcg` do RustFS da turma (`https://s3.afonsolelis.tech`, `us-east-1`, endereçamento por caminho, TLS) passa a ser o armazenamento oficial de bruto, silver, gold e gold_turma. A branch `dados-raw` continua como fonte de verdade do bruto: o Coletor diário grava só nela, e o lake recebe uma cópia sem sobrescrita.
+O bucket `tcg` do RustFS da turma (`https://lake-aulas-mackenzie.afonsolelis.tech`, `us-east-1`, endereçamento por caminho, TLS) passa a ser o armazenamento oficial de bruto, silver, gold e gold_turma. A branch `dados-raw` continua como fonte de verdade do bruto: o Coletor diário grava só nela, e o lake recebe uma cópia sem sobrescrita.
 
 O workflow da coleta ganha o passo "sincronizar com o data lake da turma", depois do commit e do push na `dados-raw`. Ele roda o mesmo Sincronizador do `make sync` (`python -m tcg.sync.sincronizador --repo ../dados`) sempre que o coletor termina com código 0 ou 1, com ou sem arquivo novo, e só se o passo de publicação tiver dado certo. `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` e `MINIO_SECRET_KEY` vêm de secrets do repositório, criados pelo autor no site do GitHub, e aparecem só no `env` desse passo; `MINIO_SECURE=true`, `MINIO_BUCKET=tcg` e `GROUP_ID=24269` são literais. Uma falha no passo marca o job como falho; o push já feito na `dados-raw` não é desfeito, e o ciclo seguinte reenvia o que faltar.
 
@@ -102,3 +102,7 @@ No Codespace, `make sync`, `make silver` e `make gold` usam o `.env` apontado pa
 - Se a turma receber credenciais individuais restritas ao prefixo.
 - Se o RustFS ficar indisponível com frequência a ponto de deixar o lake mais de um ciclo atrás da branch.
 - Se aparecer alteração do nosso bruto no lake: acrescentar ao Sincronizador a conferência de hash das chaves existentes.
+
+## Revisões
+
+- **2026-11-15**: o professor trocou o endpoint e as credenciais do data lake da turma. O endereço passou de `https://s3.afonsolelis.tech` para `https://lake-aulas-mackenzie.afonsolelis.tech`; região `us-east-1`, endereçamento por caminho, TLS e bucket `tcg` continuam iguais. Não há mudança de arquitetura: o autor atualizou o `.env` e os secrets `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` e `MINIO_SECRET_KEY`, sem mudança de código, conforme a tática "Vínculo em tempo de configuração". O contexto e as evidências de 2026-11-07 continuam citando o endereço antigo porque registram o que foi feito naquela data. Evidência da troca: `make sync` local e o passo de sincronização da execução coleta #26 sem envios, sem chaves fora do escopo e sem falhas (`docs/evidencias/T-58_troca_endpoint.txt`).

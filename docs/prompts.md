@@ -875,3 +875,14 @@ Aprovo o ADR-008, os diffs da spec, do plan e do AGENTS.md e a linha da T-58 no 
 Decisões: 1) o passo roda sempre que o coletor termina com 0 ou 1, mesmo sem arquivo novo, e só se o passo "publicar" tiver dado certo; 2) os secrets serão criados por mim pelo site do GitHub, não por gh secret set; 3) as variáveis MINIO_* não serão renomeadas; 4) inclua também o ajuste da RES-07 em docs/01_objetivos_negocio.md (e de docs/00_persona.md, se houver menção ao MinIO local como armazenamento oficial) e da docstring de src/tcg/lake/duckdb.py, mostrando os diffs no resumo final.
 Pode salvar e seguir para a etapa 2. No resumo final, liste os arquivos de cada commit: o primeiro com ADR-008, spec, plan, AGENTS.md, tasks, docs de persona e objetivos e a evidência da primeira sync; o segundo com workflow, teste, .env.example, README, docstring, evidência da suíte e prompts.
 ```
+
+## Prompt da T-58 – Troca do endpoint do data lake da turma (2026-11-15)
+
+```text
+O professor trocou o endpoint e as credenciais do data lake da turma. Eu já atualizei o .env e os secrets do GitHub. O novo endpoint é lake-aulas-mackenzie.afonsolelis.tech.
+Procure no repositório (sem ler o .env) todas as menções ao endpoint antigo s3.afonsolelis.tech e troque pelo novo. No docs/adr/ADR-008-data-lake-rustfs.md, não apague o histórico: acrescente uma nota de revisão datada de 15/11/2026 dizendo que o endpoint e as credenciais foram trocados pelo professor, sem mudança de arquitetura.
+Registre como evidência em docs/evidencias/T-58_troca_endpoint.txt: a linha final do make sync local e a do workflow #26 (enviados=0 recusados=48 fora_do_escopo=0 falhas=0), sem credenciais.
+Mostre a lista de arquivos alterados, acrescente a linha em docs/prompts.md e proponha a mensagem de commit docs(T-58): ... Não faça commit e não escreva credenciais em nenhum arquivo.
+```
+
+Resultado: endpoint trocado em `.env.example`, `AGENTS.md`, `README.md`, `specs/spec.md`, `specs/plan.md` e na decisão do ADR-008, que ganhou a seção "Revisões" com a nota de 2026-11-15. Ficaram com o endereço antigo, de propósito, os registros datados de 2026-11-07: o contexto do ADR-008, as evidências `T-58_primeira_sync_rustfs.txt` e `T-58_silver_gold_rustfs.txt` e o prompt anterior da T-58. Evidência em `docs/evidencias/T-58_troca_endpoint.txt`, com a linha final do `make sync` local executado pelo autor (2026-11-15T14:04:33Z) e a do workflow coleta #26. Nenhum comando contra o data lake foi executado pelo agente, e nenhuma credencial foi escrita.

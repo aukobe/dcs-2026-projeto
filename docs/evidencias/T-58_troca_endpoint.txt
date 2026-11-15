@@ -1,0 +1,10 @@
+T-58 – Troca do endpoint e das credenciais do data lake da turma (2026-11-15)
+Endpoint antigo: s3.afonsolelis.tech
+Endpoint novo:   lake-aulas-mackenzie.afonsolelis.tech
+Credenciais: trocadas pelo professor; atualizadas pelo autor só no .env e nos secrets do GitHub (não registradas aqui).
+
+1) make sync local (Codespace, .env apontado para o novo endpoint), executado pelo autor em 2026-11-15 às 14:04 UTC, linha final:
+2026-11-15T14:04:33Z INFO __main__: sincronização encerrada: enviados=0 recusados=48 fora_do_escopo=0 falhas=0
+
+2) Workflow coleta #26, passo "sincronizar com o data lake da turma", linha final:
+sincronização encerrada: enviados=0 recusados=48 fora_do_escopo=0 falhas=0

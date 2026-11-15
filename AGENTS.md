@@ -16,7 +16,7 @@ Regras para qualquer agente de IA (ou pessoa) que trabalhe neste repositório. I
 ## Ambiente
 
 - Desenvolvimento e execução local no GitHub Codespaces, com Docker e Python.
-- Data lake oficial: bucket `tcg` do RustFS da turma, compatível com S3, em `https://s3.afonsolelis.tech` (região `us-east-1`, endereçamento por caminho), com credencial compartilhada da turma (ADR-008).
+- Data lake oficial: bucket `tcg` do RustFS da turma, compatível com S3, em `https://lake-aulas-mackenzie.afonsolelis.tech` (região `us-east-1`, endereçamento por caminho), com credencial compartilhada da turma (ADR-008).
 - MinIO local por docker compose (ADR-002), em `localhost:9000`, bucket `tcg`, só para desenvolvimento; os testes de integração usam um MinIO descartável com a mesma imagem.
 - As variáveis `MINIO_*` apontam para qualquer servidor S3; o `.env` decide qual.
 - Configuração lida de variáveis de ambiente definidas no `.env` (modelo em `.env.example`).

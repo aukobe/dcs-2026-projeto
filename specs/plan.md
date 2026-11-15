@@ -13,7 +13,7 @@ Nomes usados nos diagramas e no texto (sempre estes, sem sinônimos):
 | Coletor diário | Job do GitHub Actions que busca TCGCSV, PTAX e CDI e grava as respostas originais | GitHub Actions |
 | Branch dados-raw | Branch do repositório que guarda o bruto como arquivos, no caminho idêntico à chave | GitHub |
 | Sincronizador | Copia os arquivos da Branch dados-raw para o bucket `tcg` sem sobrescrever; passo do workflow da coleta e `make sync` | GitHub Actions e Codespace |
-| Data lake da turma | RustFS compatível com S3 em `https://s3.afonsolelis.tech`, bucket `tcg`; armazenamento oficial | externo (turma) |
+| Data lake da turma | RustFS compatível com S3 em `https://lake-aulas-mackenzie.afonsolelis.tech`, bucket `tcg`; armazenamento oficial | externo (turma) |
 | MinIO local | Servidor S3 por docker compose, bucket `tcg`; só desenvolvimento | Codespace |
 | Construtor da silver | Comando local que lê o bruto da DRI, valida com pydantic e grava a silver e a quarentena | Codespace |
 | Construtor da gold | Comando local que lê as silvers (DRI e outras coleções, somente leitura), monta o esquema estrela e as carteiras | Codespace |
@@ -260,7 +260,7 @@ Variáveis de ambiente (nomes do `.env.example`, valores só no `.env`): `MINIO_
 
 | Ambiente | Servidor S3 | Quem usa | Credenciais |
 |---|---|---|---|
-| Oficial | Data lake da turma (RustFS, `https://s3.afonsolelis.tech`, `us-east-1`, endereçamento por caminho, TLS) | passo de sincronização do workflow; `make sync`, `make silver`, `make gold` e `make painel` no Codespace | secrets do repositório; `.env` |
+| Oficial | Data lake da turma (RustFS, `https://lake-aulas-mackenzie.afonsolelis.tech`, `us-east-1`, endereçamento por caminho, TLS) | passo de sincronização do workflow; `make sync`, `make silver`, `make gold` e `make painel` no Codespace | secrets do repositório; `.env` |
 | Desenvolvimento | MinIO local (`localhost:9000`, sem TLS) | os mesmos comandos, com o `.env` apontado para ele | `.env` |
 | Testes de integração | MinIO descartável (testcontainers, imagem do ADR-002) | `make test` | geradas pelo teste |
 
