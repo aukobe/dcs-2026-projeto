@@ -1,0 +1,30 @@
+T-53 – Avaliação ATAM (docs/atam.md) – verificação executada pelo agente em 2026-11-16T23:45Z
+
+$ test -s docs/atam.md && grep -c "RNF-" docs/atam.md
+42
+código de saída: 0
+
+Conferência do critério (cada RNF em ao menos um cenário, com resposta e medida):
+$ for r in $(seq -f "RNF-%02g" 1 13); do n=$(grep -E "^### C-[0-9]+:.*\b$r\b" docs/atam.md | cut -d: -f1 | tr "\n" " "); echo "$r: ${n:-FALTA}"; done
+RNF-01: ### C-03 
+RNF-02: ### C-04 
+RNF-03: ### C-05 ### C-13 
+RNF-04: ### C-06 
+RNF-05: ### C-07 
+RNF-06: ### C-07 
+RNF-07: ### C-08 
+RNF-08: ### C-09 
+RNF-09: ### C-10 
+RNF-10: ### C-11 
+RNF-11: ### C-12 
+RNF-12: ### C-02 
+RNF-13: ### C-01 
+
+$ grep -c "^### C-" docs/atam.md; grep -c "^| Resposta |" docs/atam.md; grep -c "^| Medida |" docs/atam.md
+13
+13
+13
+
+Arquivos de docs/evidencias/ citados no docs/atam.md que não existem:
+$ grep -oE "docs/evidencias/[A-Za-z0-9_.-]+" docs/atam.md | sort -u | while read f; do test -e "$f" || echo "falta $f"; done
+(fim da lista)
