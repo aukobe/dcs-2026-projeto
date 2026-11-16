@@ -1,0 +1,40 @@
+$ .venv/bin/python -m pytest tests/integracao/test_gold_turma.py -v
+tests/integracao/test_gold_turma.py::test_so_chaves_permitidas_da_dri_e_terceiro_intocado PASSED [ 20%]
+tests/integracao/test_gold_turma.py::test_contrato_de_colunas_e_tipos PASSED [ 40%]
+tests/integracao/test_gold_turma.py::test_uma_linha_por_dia_e_carteira_com_valores PASSED [ 60%]
+tests/integracao/test_gold_turma.py::test_gold_da_dri_tem_as_duas_taxas_para_o_painel PASSED [ 80%]
+tests/integracao/test_gold_turma.py::test_regravar_e_idempotente PASSED  [100%]
+============================== 5 passed in 3.89s ===============================
+
+$ .venv/bin/python -m pytest tests/unidade/test_carteiras_gold.py tests/unidade/test_reprocessar.py tests/integracao/test_reprocessar_integracao.py -v
+tests/unidade/test_carteiras_gold.py::test_regra_propria_aceita_pelo_status_do_adr PASSED [  4%]
+tests/unidade/test_carteiras_gold.py::test_gold_turma_no_contrato_uma_linha_por_dia_e_carteira PASSED [  8%]
+tests/unidade/test_carteiras_gold.py::test_gold_turma_valores_retorno_e_taxa PASSED [ 12%]
+tests/unidade/test_carteiras_gold.py::test_metricas_e_liquidacao_com_taxa_zero_na_gold_da_dri PASSED [ 16%]
+tests/unidade/test_carteiras_gold.py::test_propria_pendente_sai_com_valores_nulos PASSED [ 20%]
+tests/unidade/test_carteiras_gold.py::test_guarda_de_prefixo_recusa_destino_fora_do_permitido PASSED [ 25%]
+tests/unidade/test_reprocessar.py::test_listar_derivados_so_traz_prefixos_da_dri PASSED [ 29%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[None] PASSED [ 33%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[] PASSED [ 37%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[   ] PASSED [ 41%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[sim] PASSED [ 45%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[99999] PASSED [ 50%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[242690] PASSED [ 54%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[2426] PASSED [ 58%]
+tests/unidade/test_reprocessar.py::test_sem_confirmacao_valida_nada_e_apagado[24269x] PASSED [ 62%]
+tests/unidade/test_reprocessar.py::test_main_sem_confirmacao_sai_com_codigo_4 PASSED [ 66%]
+tests/unidade/test_reprocessar.py::test_com_confirmacao_apaga_so_derivadas_e_reconstroi PASSED [ 70%]
+tests/unidade/test_reprocessar.py::test_confirmacao_com_espacos_e_aceita PASSED [ 75%]
+tests/unidade/test_reprocessar.py::test_makefile_passa_confirmar_depois_do_env PASSED [ 79%]
+tests/integracao/test_reprocessar_integracao.py::test_sem_confirmacao_nada_muda PASSED [ 83%]
+tests/integracao/test_reprocessar_integracao.py::test_primeira_execucao_apaga_orfaos_e_so_derivadas_da_dri PASSED [ 87%]
+tests/integracao/test_reprocessar_integracao.py::test_raw_e_terceiros_mantem_o_hash PASSED [ 91%]
+tests/integracao/test_reprocessar_integracao.py::test_duas_execucoes_mesmas_chaves_contagens_e_conteudo PASSED [ 95%]
+tests/integracao/test_reprocessar_integracao.py::test_nenhuma_chave_de_grao_duplicada PASSED [100%]
+============================== 24 passed in 5.64s ==============================
+
+$ .venv/bin/python -m pytest -q
+407 passed in 43.57s
+
+$ docker ps -a --filter label=tcg.teste=T-19 -q | wc -l
+0

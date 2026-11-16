@@ -80,6 +80,8 @@ def cenario(monkeypatch):
     bucket = BucketFalso(DERIVADAS_DRI + INTOCAVEIS, eventos)
     monkeypatch.setattr(modulo, "construir_silver", lambda c, b, col: eventos.append(("silver", None)) or "S")
     monkeypatch.setattr(modulo, "construir_gold", lambda c, con, b: eventos.append(("gold", None)) or "G")
+    monkeypatch.setattr(modulo, "construir_carteiras",
+                        lambda con, b, taxa, regra: eventos.append(("carteiras", None)) or "C")
 
     def abrir_duckdb():
         eventos.append(("duckdb_aberto", None))
@@ -148,7 +150,7 @@ def test_com_confirmacao_apaga_so_derivadas_e_reconstroi(cenario, caplog):
     assert bucket.objetos == set(INTOCAVEIS), "raw/ e outros group_ids continuam lá"
     # exclusão inteira antes da reconstrução; silver antes da gold; DuckDB fechado no fim
     nomes = [e for e, _ in eventos]
-    assert nomes == ["remove_object"] * 7 + ["silver", "duckdb_aberto", "gold", "duckdb_fechado"]
+    assert nomes == ["remove_object"] * 7 + ["silver", "duckdb_aberto", "gold", "carteiras", "duckdb_fechado"]
     assert (r.silver, r.gold) == ("S", "G")
     texto = caplog.text
     assert "reprocessamento iniciado" in texto and "reprocessamento concluído" in texto

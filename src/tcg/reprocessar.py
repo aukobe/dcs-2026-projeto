@@ -14,14 +14,15 @@ administrador, e este comando apaga objetos.
    código 4, sem apagar nada e sem abrir o DuckDB.
 3. Com a confirmação, apaga pelo `guarda_prefixo.apagar` (única exclusão do
    código, que valida o lote inteiro antes do SDK) e registra cada chave.
-4. Reconstrói a partir do bruto: `construir_silver` e depois `construir_gold`,
-   os mesmos construtores de `make silver` e `make gold`.
+4. Reconstrói a partir do bruto: `construir_silver`, `construir_gold` e
+   `construir_carteiras` (gold das carteiras e gold_turma, T-44), os mesmos
+   construtores de `make silver` e `make gold`.
 
 O log registra início, chaves apagadas e fim (specs/plan.md, seção 10).
 
 Códigos de saída: 0 = reprocessado; 2 = configuração ausente ou inválida;
 3 = silver da DRI ausente ou fora do contrato (gold não gerada);
-4 = sem confirmação, nada apagado.
+4 = sem confirmação, nada apagado; 5 = carteiras não calculadas.
 """
 
 from __future__ import annotations
@@ -33,8 +34,15 @@ import logging
 import os
 import sys
 
-from tcg.config import Colecao, ConfiguracaoError, ler_colecao, ler_config_minio
-from tcg.gold.construtor import ResultadoGold, SilverDriInvalidaError, construir_gold
+from tcg.config import Colecao, ConfiguracaoError, ler_colecao, ler_config_minio, ler_parametros
+from tcg.gold.construtor import (
+    ResultadoCarteiras,
+    ResultadoGold,
+    SilverDriInvalidaError,
+    construir_carteiras,
+    construir_gold,
+    regra_propria_aceita,
+)
 from tcg.lake.cliente import criar_cliente
 from tcg.lake.duckdb import conectar
 from tcg.lake.guarda_prefixo import GROUP_ID_DRI, apagar, chave_permitida
@@ -47,6 +55,7 @@ SUCESSO = 0
 ERRO_CONFIG = 2
 ERRO_SILVER_DRI = 3
 SEM_CONFIRMACAO = 4
+ERRO_CARTEIRAS = 5
 
 VARIAVEL_CONFIRMACAO = "CONFIRMAR"
 VALOR_CONFIRMACAO = str(GROUP_ID_DRI)
@@ -67,6 +76,7 @@ class ResultadoReprocessamento:
     apagadas: list[str] = field(default_factory=list)
     silver: ResultadoSilver | None = None
     gold: ResultadoGold | None = None
+    carteiras: ResultadoCarteiras | None = None
 
 
 def listar_derivados(cliente, bucket: str) -> dict[str, list[str]]:
@@ -122,9 +132,10 @@ def reprocessar(
     con = abrir_duckdb()
     try:
         r.gold = construir_gold(cliente, con, bucket)
+        r.carteiras = construir_carteiras(con, bucket, ler_parametros().taxa_venda, regra_propria_aceita())
     finally:
         con.close()
-    log.info("reprocessamento concluído: %d apagada(s), silver e gold reconstruídas", len(r.apagadas))
+    log.info("reprocessamento concluído: %d apagada(s), silver, gold e gold_turma reconstruídas", len(r.apagadas))
     return r
 
 
@@ -150,6 +161,9 @@ def main(argv: list[str] | None = None) -> int:
     except SilverDriInvalidaError as erro:
         log.error("%s; gold não gerada", erro)
         return ERRO_SILVER_DRI
+    except ValueError as erro:
+        log.error("carteiras não calculadas: %s", erro)
+        return ERRO_CARTEIRAS
     return SUCESSO if r.confirmado else SEM_CONFIRMACAO
 
 

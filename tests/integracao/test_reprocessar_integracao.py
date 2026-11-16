@@ -163,7 +163,10 @@ def test_primeira_execucao_apaga_orfaos_e_so_derivadas_da_dri(duas_execucoes):
     r1, _ = e["r"]
     assert sorted(r1.apagadas) == sorted(ORFAOS)
     h1, _ = e["h"]
-    assert not set(ORFAOS) & set(h1), "órfãos removidos"
+    # a gold_turma da DRI tem chave fixa: é apagada e recriada por construir_carteiras (T-44)
+    recriada = f"gold_turma/carteira/group_id={DRI}/carteira.parquet"
+    assert not (set(ORFAOS) - {recriada}) & set(h1), "órfãos removidos"
+    assert h1[recriada] != hashlib.sha256(ORFAOS[recriada]).hexdigest(), "gold_turma recriada"
 
 
 def test_raw_e_terceiros_mantem_o_hash(duas_execucoes):
