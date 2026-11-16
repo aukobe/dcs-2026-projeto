@@ -1,0 +1,17 @@
+$ .venv/bin/python -m pytest tests/unidade/test_liquidacao.py -v
+tests/unidade/test_liquidacao.py::test_composicao_da_fixture PASSED      [ 10%]
+tests/unidade/test_liquidacao.py::test_primeiro_dia_custo_liquidado_e_cdi_exata PASSED [ 20%]
+tests/unidade/test_liquidacao.py::test_cdi_so_em_dia_util_com_taxa_da_vespera PASSED [ 30%]
+tests/unidade/test_liquidacao.py::test_preco_ausente_usa_ultimo_observado_e_marca PASSED [ 40%]
+tests/unidade/test_liquidacao.py::test_taxa_zero_contra_15_so_muda_cartas_e_selados PASSED [ 50%]
+tests/unidade/test_liquidacao.py::test_dolar_com_ptax_de_compra PASSED   [ 60%]
+tests/unidade/test_liquidacao.py::test_criterio_da_tarefa_435_e_taxa_10 PASSED [ 70%]
+tests/unidade/test_liquidacao.py::test_uma_linha_por_carteira_dia_e_taxa PASSED [ 80%]
+tests/unidade/test_liquidacao.py::test_propria_regra_pendente_tem_linha_com_valor_nulo PASSED [ 90%]
+tests/unidade/test_liquidacao.py::test_sem_ptax_de_compra_no_periodo_e_erro PASSED [100%]
+============================== 10 passed in 0.82s ==============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+........................................................................ [ 82%]
+............................................................             [100%]
+348 passed in 27.09s
