@@ -58,6 +58,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-16 | T-40 | texto completo em [Prompt da T-40 – ADR-006, fallback do selado (2026-11-16)](#prompt-da-t-40--adr-006-fallback-do-selado-2026-11-16) | rascunho aprovado sem alterações, mantendo os dois acréscimos do agente (alternativa "buscar o preço do booster box em outro dia" e risco "regra do nome pegar outro produto", tratado como pendência); ADR salvo em `docs/adr/ADR-006-fallback-selado.md`, T-40 marcada como [x] |
 | 2026-11-16 | T-41 | "prompt de implementação padrão" (detalhes em [Prompt da T-41 – Composição das carteiras (2026-11-16)](#prompt-da-t-41--composição-das-carteiras-2026-11-16)) | plano aprovado com duas decisões do autor (pendência só com mais de um `product_id` na regra do booster box; "regra pendente" pelo parâmetro `regra_propria`); criados `src/tcg/gold/carteiras.py` e `tests/unidade/test_composicao.py`; quatro tentativas até passar (uma no código, três nos valores esperados do teste); 24 passed; suíte de unidade: 338 passed (`docs/evidencias/T-41_composicao.txt`) |
 | 2026-11-16 | T-42 | "prompt de implementação padrão" (detalhes em [Prompt da T-42 – Liquidação diária das carteiras (2026-11-16)](#prompt-da-t-42--liquidação-diária-das-carteiras-2026-11-16)) | plano aprovado com um ajuste do autor no CDI (a taxa do dia útil d remunera de d ao próximo dia útil: valor(D) = inicial × Π (1 + cdi_taxa_dia(d)/100), primeiro dia ≤ d < D; `cdi_pendente` marca a linha quando falta a taxa de algum d < D usado); criados `src/tcg/gold/liquidacao.py` e `tests/unidade/test_liquidacao.py`; uma correção no teste (relação DuckDB sem `fetchone()`); 10 passed; suíte de unidade: 348 passed (`docs/evidencias/T-42_liquidacao.txt`) |
+| 2026-11-16 | T-43 | "prompt de implementação padrão" (detalhes em [Prompt da T-43 – Métricas das carteiras (2026-11-16)](#prompt-da-t-43--métricas-das-carteiras-2026-11-16)) | plano aprovado sem alterações (contas conferidas pelo autor); criados `src/tcg/gold/metricas_carteira.py` e `tests/unidade/test_metricas_carteira.py`; 9 passed na 1ª execução; suíte de unidade: 357 passed (`docs/evidencias/T-43_metricas_carteira.txt`) |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -985,3 +986,20 @@ Tentativas até a verificação passar:
 1. Teste: nesta versão do DuckDB, relação não tem `fetchone()` (1 falha, em `test_uma_linha_por_carteira_dia_e_taxa`); a contagem passou a usar `con.execute(...).fetchone()`. Resultado: 10 passed. Nenhum valor esperado precisou de ajuste.
 
 Resultado: `.venv/bin/python -m pytest tests/unidade/test_liquidacao.py -v`: 10 passed; suíte de unidade (`.venv/bin/python -m pytest tests/unidade -q`): 348 passed; evidência em `docs/evidencias/T-42_liquidacao.txt`. T-42 marcada como [x] em `specs/tasks.md`. Nenhum acesso ao RustFS, ao MinIO ou à rede; nenhuma liquidação foi calculada com dados reais.
+
+## Prompt da T-43 – Métricas das carteiras (2026-11-16)
+
+Prompt: "prompt de implementação padrão" (C-R-E-A-T-E) para a T-43, com as leituras obrigatórias (AGENTS.md, spec com Definições e RF-23 a RF-26, plan, tasks, `carteiras.py`, `liquidacao.py`), as confirmações no plano (retorno acumulado, excesso sobre o CDI, perda máxima, dias com preço carregado e propria com "regra pendente", por carteira e por taxa, com a taxa do parâmetro e com taxa 0) e os testes obrigatórios em `tests/unidade/test_metricas_carteira.py`.
+
+Decisões no plano, aprovado sem alterações pelo autor ("As contas conferem"):
+- Módulo separado `src/tcg/gold/metricas_carteira.py`, no mesmo padrão de `liquidacao.py` da T-42 (a árvore do plan.md lista só `carteiras.py` em `gold/`).
+- Excesso sobre o CDI comparado com a carteira cdi da mesma taxa de venda; sem a carteira cdi naquela taxa, erro.
+- Perda máxima = máximo de (pico corrente − valor) ÷ pico corrente; 0 se a série nunca cai.
+- Dias com preço carregado = dias com `preco_carregado` na linha da carteira (T-42).
+- Valores esperados conferidos conta por conta no plano e nos comentários do teste: 1000, 1200, 900, 1100 → retorno 10% e perda 25%; 1000, 1100, 990, 1200, 1000, 840, 900 → perda 30% (primeiro pico daria 23,6%; maior queda diária, 16,7%); taxa 0 contra 15% com `liquidar_carteiras` da T-42 → diferença 0,12 = 800 × 0,15 / 1000 no selado e 0 em dolar e cdi.
+
+Implementação: `src/tcg/gold/metricas_carteira.py` com `retorno_acumulado`, `perda_maxima`, `calcular_metricas` (função pura sobre as `LinhaCarteira` da T-42, agrupadas por taxa de venda × carteira e ordenadas por data, sem recalcular valores; propria com "regra pendente" sai com métricas nulas, sem erro) e `registrar_metricas` (tabela DuckDB `metricas_carteira`, uma linha por carteira × taxa). Nada foi ligado ao `make gold`; gold_turma e painel não foram adiantados (T-44, T-47).
+
+Tentativas até a verificação passar: nenhuma correção; 9 passed na 1ª execução.
+
+Resultado: `.venv/bin/python -m pytest tests/unidade/test_metricas_carteira.py -v`: 9 passed; suíte de unidade (`.venv/bin/python -m pytest tests/unidade -q`): 357 passed; evidência em `docs/evidencias/T-43_metricas_carteira.txt`. T-43 marcada como [x] em `specs/tasks.md`. Nenhum acesso ao RustFS, ao MinIO ou à rede; nenhuma métrica foi calculada com dados reais.

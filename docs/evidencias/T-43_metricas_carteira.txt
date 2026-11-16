@@ -1,0 +1,17 @@
+$ .venv/bin/python -m pytest tests/unidade/test_metricas_carteira.py -v
+tests/unidade/test_metricas_carteira.py::test_criterio_da_tarefa_retorno_10_e_perda_25 PASSED [ 11%]
+tests/unidade/test_metricas_carteira.py::test_retorno_acumulado_e_excesso_sobre_cdi PASSED [ 22%]
+tests/unidade/test_metricas_carteira.py::test_perda_maxima_pico_relevante_nao_e_o_primeiro PASSED [ 33%]
+tests/unidade/test_metricas_carteira.py::test_perda_maxima_zero_em_serie_que_so_sobe PASSED [ 44%]
+tests/unidade/test_metricas_carteira.py::test_dias_com_preco_carregado PASSED [ 55%]
+tests/unidade/test_metricas_carteira.py::test_taxa_zero_contra_15_so_muda_cartas_e_selados PASSED [ 66%]
+tests/unidade/test_metricas_carteira.py::test_propria_pendente_tem_metricas_nulas PASSED [ 77%]
+tests/unidade/test_metricas_carteira.py::test_registrar_metricas_uma_linha_por_carteira_e_taxa PASSED [ 88%]
+tests/unidade/test_metricas_carteira.py::test_sem_carteira_cdi_e_erro PASSED [100%]
+============================== 9 passed in 0.15s ===============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+........................................................................ [ 60%]
+........................................................................ [ 80%]
+.....................................................................    [100%]
+357 passed in 27.32s
