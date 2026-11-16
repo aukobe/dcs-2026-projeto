@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import datetime as dt
 import os
+import re
 from pathlib import Path
 
 import altair as alt
@@ -53,7 +54,7 @@ import pandas as pd
 import streamlit as st
 
 from tcg.config import ler_parametros
-from tcg.gold.carteiras import CARTEIRAS, ORCAMENTO, STATUS_REGRA_PENDENTE
+from tcg.gold.carteiras import CARTEIRAS, ORCAMENTO, STATUS_REGRA_PENDENTE, VALOR_POR_CARTA
 from tcg.gold.metricas_carteira import perda_maxima
 from tcg.gold.perguntas import (
     p1_rankings,
@@ -99,6 +100,10 @@ SERIE_P2_SELADOS = "Selados (cesta fixa)"
 SERIE_P2_RARAS = "Double Rare em diante (cesta fixa)"
 # Legenda abaixo do gráfico e sem limite de largura do rótulo: nada aparece cortado
 LEGENDA_INTEIRA = alt.Legend(orient="bottom", direction="vertical", labelLimit=0)
+LEGENDA_DIREITA = alt.Legend(orient="right", labelLimit=0)
+# Altura fixa de todos os gráficos: com `width="stretch"` e sem altura, na tela normal a
+# área de plotagem das carteiras ficava espremida a uma linha, sem eixo y visível.
+ALTURA_GRAFICO = 420
 ABAS = (
     "Itens", "P1: alta e queda", "P2: selados × raras", "P3: coleções", "P4: concentração", "P5: risco",
     "Carteiras", "Placar da turma",
@@ -232,6 +237,29 @@ def fonte_gold_turma() -> str | None:
 
 
 # ---------------------------------------------------------------- formatação pt-BR
+
+
+_CIFRAO_SEM_ESCAPE = re.compile(r"(?<!\\)\$")
+
+
+def escapar_cifrao(corpo) -> str:
+    """Escapa o "$" ainda sem escape: no Markdown do Streamlit, "R$ ... R$" vira fórmula LaTeX."""
+    return _CIFRAO_SEM_ESCAPE.sub(r"\\$", str(corpo))
+
+
+class _TextoSeguro:
+    """Delega `caption`, `markdown`, `info` etc. ao `st`, escapando o cifrão do corpo (T-47)."""
+
+    def __getattr__(self, nome):
+        funcao = getattr(st, nome)
+
+        def chamar(corpo, *args, **kwargs):
+            return funcao(escapar_cifrao(corpo), *args, **kwargs)
+
+        return chamar
+
+
+texto = _TextoSeguro()
 
 
 def _nulo(valor) -> bool:
@@ -445,7 +473,7 @@ def filtro_preco_minimo(pergunta: str) -> float:
     """Preço mínimo em US$ no primeiro dia, com o padrão da pergunta (RF-14)."""
     return float(
         st.sidebar.number_input(
-            f"Preço mínimo no primeiro dia (US$), {pergunta}",
+            escapar_cifrao(f"Preço mínimo no primeiro dia (US$), {pergunta}"),
             min_value=0.0,
             value=PRECO_MINIMO_PADRAO[pergunta],
             step=0.5,
@@ -458,7 +486,7 @@ def filtro_preco_minimo(pergunta: str) -> float:
 def aviso_periodo_curto(primeiro: dt.date, ultimo: dt.date) -> None:
     """Aviso de que o período é curto e não sustenta previsão (RF-21)."""
     dias = (ultimo - primeiro).days + 1
-    st.warning(
+    texto.warning(
         f"Período de {dias} dias ({primeiro:%d/%m/%Y} a {ultimo:%d/%m/%Y}): "
         "o período é curto e não sustenta previsão. Dias sem coleta aparecem "
         "como interrupção na linha, sem ponto interpolado."
@@ -499,7 +527,7 @@ def grafico_linhas(
         )
     codificacao["tooltip"] = tooltip
     return (
-        alt.Chart(dados, title=titulo)
+        alt.Chart(dados, title=titulo, height=ALTURA_GRAFICO)
         .mark_line(point=True, invalid="break-paths-show-domains")
         .encode(**codificacao)
     )
@@ -513,13 +541,13 @@ def grafico_serie(serie: pd.DataFrame, titulo: str, rotulo_y: str, cor: str | No
 def mostrar_produto(nome: str, image_url: str | None, url: str | None) -> None:
     """Imagem e link do produto, ou os avisos de indisponível (RF-20)."""
     if image_url is None or pd.isna(image_url) or not str(image_url).strip():
-        st.caption(AVISO_IMAGEM)
+        texto.caption(AVISO_IMAGEM)
     else:
         st.image(str(image_url), caption=nome, width=200)
     if url is None or pd.isna(url) or not str(url).strip():
-        st.caption(AVISO_LINK)
+        texto.caption(AVISO_LINK)
     else:
-        st.markdown(f"[Ver {nome} no TCGplayer]({url})")
+        texto.markdown(f"[Ver {nome} no TCGplayer]({url})")
 
 
 # ---------------------------------------------------------------- seções
@@ -540,8 +568,8 @@ def seletor_item(itens: pd.DataFrame, chave: str, rotulo=None) -> None:
 def secao_itens(gold, fato, dim_produto, moeda, minimo, primeiro) -> None:
     simbolo = SIMBOLO_MOEDA[moeda]
     itens = aplicar_filtro_preco(tabela_itens(fato, dim_produto, moeda), minimo)
-    st.subheader("Cartas da coleção")
-    st.caption(f"{len(itens)} itens com preço acima de {formatar_moeda(minimo, 'US$')} em {primeiro:%d/%m/%Y}.")
+    texto.subheader("Cartas da coleção")
+    texto.caption(f"{len(itens)} itens com preço acima de {formatar_moeda(minimo, 'US$')} em {primeiro:%d/%m/%Y}.")
     exibicao = itens[["nome", "acabamento", "raridade"]].rename(
         columns={"nome": "Produto", "acabamento": "Acabamento", "raridade": "Raridade"}
     )
@@ -550,7 +578,7 @@ def secao_itens(gold, fato, dim_produto, moeda, minimo, primeiro) -> None:
     st.dataframe(exibicao, hide_index=True, width="stretch")
 
     if itens.empty:
-        st.info("Nenhum item acima do preço mínimo.")
+        texto.info("Nenhum item acima do preço mínimo.")
         return
 
     rotulos = [f"{r.nome} ({r.acabamento})" for r in itens.itertuples()]
@@ -572,8 +600,8 @@ def secao_itens(gold, fato, dim_produto, moeda, minimo, primeiro) -> None:
 
 
 def secao_p1(con, moeda: str, minimo: float) -> None:
-    st.subheader("P1: cartas que mais valorizaram e desvalorizaram")
-    st.caption(
+    texto.subheader("P1: cartas que mais valorizaram e desvalorizaram")
+    texto.caption(
         f"Variação em reais do primeiro ao último dia, decomposta em carta (dólar), câmbio e "
         f"termo cruzado; só cartas sem Code Card acima de {formatar_moeda(minimo, 'US$')} no primeiro dia."
     )
@@ -583,9 +611,9 @@ def secao_p1(con, moeda: str, minimo: float) -> None:
         "Link": st.column_config.LinkColumn("Link", display_text="TCGplayer"),
     }
     for titulo, ranking in (("Maiores altas", alta), ("Maiores quedas", queda)):
-        st.markdown(f"**{titulo}**")
+        texto.markdown(f"**{titulo}**")
         if ranking.empty:
-            st.info(f"Nenhum item em {titulo.lower()}.")
+            texto.info(f"Nenhum item em {titulo.lower()}.")
             continue
         st.dataframe(tabela_ranking(ranking, moeda), hide_index=True, width="stretch", column_config=configuracao)
     detalhe = pd.concat([alta, queda], ignore_index=True)
@@ -596,13 +624,13 @@ def secao_p1(con, moeda: str, minimo: float) -> None:
 
 def secao_p2(con, gold, moeda: str) -> None:
     simbolo = SIMBOLO_MOEDA[moeda]
-    st.subheader("P2: selados contra cartas Double Rare em diante")
+    texto.subheader("P2: selados contra cartas Double Rare em diante")
     p2 = p2_indice(con, "fato_preco_diario", "dim_produto", coluna=COLUNA_MOEDA[moeda]).df()
     if p2.empty:
-        st.info("Sem preços da DRI para a P2.")
+        texto.info("Sem preços da DRI para a P2.")
         return
     n_sel, n_rar = int(p2["itens_selados"].iloc[0]), int(p2["itens_double_rare_mais"].iloc[0])
-    st.caption(
+    texto.caption(
         f"Índice base 100 no primeiro dia, em {moeda} ({simbolo}), cestas fixas da DRI: "
         f"{n_sel} selados e {n_rar} cartas Double Rare em diante. O RF-16 usa a média dos "
         "selados e a soma das cartas; com a cesta fixa, a média é a soma dividida por um número "
@@ -623,18 +651,18 @@ def secao_p2(con, gold, moeda: str) -> None:
 
 
 def secao_p3(con, gold, moeda: str, rotulos: dict[int, str], so_dri: bool) -> None:
-    st.subheader("P3: valor da coleção em índice base 100")
+    texto.subheader("P3: valor da coleção em índice base 100")
     if so_dri:
-        st.warning(AVISO_OUTRAS_COLECOES)
+        texto.warning(AVISO_OUTRAS_COLECOES)
     p3 = p3_indice(
         con, "fato_preco_diario", "dim_produto", "fato_cambio_diario", coluna=COLUNA_MOEDA[moeda]
     ).df()
     if p3.empty:
-        st.info("Sem preços para a P3.")
+        texto.info("Sem preços para a P3.")
         return
     base = p3["data"].min()
     cestas = p3[p3["serie"] != "PTAX"].groupby("group_id")["itens_cesta"].first()
-    st.caption(
+    texto.caption(
         f"Base 100 em {formatar_data(base)}, o primeiro dia comum às coleções; PTAX de venda tracejada; "
         "DRI destacada. Itens por cesta fixa: "
         + ", ".join(f"{rotulos.get(int(g), g)} {int(n)}" for g, n in cestas.items())
@@ -657,12 +685,12 @@ def secao_p3(con, gold, moeda: str, rotulos: dict[int, str], so_dri: bool) -> No
 
 
 def secao_p4(con, rotulos: dict[int, str], so_dri: bool) -> None:
-    st.subheader("P4: concentração do valor no último dia")
+    texto.subheader("P4: concentração do valor no último dia")
     if so_dri:
-        st.warning(AVISO_OUTRAS_COLECOES)
+        texto.warning(AVISO_OUTRAS_COLECOES)
     participacao, concentracao = (r.df() for r in p4_concentracao(con, "fato_preco_diario", "dim_produto"))
     if participacao.empty:
-        st.info("Sem preços para a P4.")
+        texto.info("Sem preços para a P4.")
         return
     participacao = participacao.assign(
         colecao=participacao["group_id"].map(rotulos),
@@ -670,7 +698,7 @@ def secao_p4(con, rotulos: dict[int, str], so_dri: bool) -> None:
         valor_fmt=participacao["valor"].map(lambda v: formatar_moeda(v, "R$")),
     )
     grafico = (
-        alt.Chart(participacao, title="Participação por raridade (cartas sem Code Card)")
+        alt.Chart(participacao, title="Participação por raridade (cartas sem Code Card)", height=ALTURA_GRAFICO)
         .mark_bar()
         .encode(
             x=alt.X("colecao:N", title="Coleção", axis=alt.Axis(labelAngle=0)),
@@ -699,19 +727,19 @@ def secao_p4(con, rotulos: dict[int, str], so_dri: bool) -> None:
         hide_index=True,
         width="stretch",
     )
-    st.caption("A participação usa o market_price em reais do último dia; no mesmo dia, ela não muda com a moeda.")
+    texto.caption("A participação usa o market_price em reais do último dia; no mesmo dia, ela não muda com a moeda.")
 
 
 def secao_p5(con, moeda: str, minimo: float, rotulos: dict[int, str], so_dri: bool) -> None:
     simbolo = SIMBOLO_MOEDA[moeda]
-    st.subheader("P5: retorno contra volatilidade")
+    texto.subheader("P5: retorno contra volatilidade")
     if so_dri:
-        st.warning(AVISO_OUTRAS_COLECOES)
+        texto.warning(AVISO_OUTRAS_COLECOES)
     p5 = p5_retorno_volatilidade(
         con, "fato_preco_diario", "dim_produto", coluna=COLUNA_MOEDA[moeda], preco_minimo_usd=minimo
     ).df()
     if p5.empty:
-        st.info("Nenhum item acima do preço mínimo para a P5.")
+        texto.info("Nenhum item acima do preço mínimo para a P5.")
         return
     p5 = p5.assign(
         colecao=p5["group_id"].map(rotulos),
@@ -722,7 +750,7 @@ def secao_p5(con, moeda: str, minimo: float, rotulos: dict[int, str], so_dri: bo
     )
     pontos = p5[p5["volatilidade"].notna()]
     sem_vol = len(p5) - len(pontos)
-    st.caption(
+    texto.caption(
         f"Cartas sem Code Card acima de {formatar_moeda(minimo, 'US$')} no primeiro dia da coleção; "
         f"volatilidade = desvio-padrão amostral dos retornos diários em {moeda}, sem retornos que "
         f"atravessam lacuna. {len(pontos)} itens no gráfico"
@@ -730,7 +758,7 @@ def secao_p5(con, moeda: str, minimo: float, rotulos: dict[int, str], so_dri: bo
     )
     if not pontos.empty:
         grafico = (
-            alt.Chart(pontos, title="Retorno no período × volatilidade diária")
+            alt.Chart(pontos, title="Retorno no período × volatilidade diária", height=ALTURA_GRAFICO)
             .mark_circle(size=80, opacity=0.8)
             .encode(
                 x=alt.X("volatilidade:Q", axis=eixo_numero("Volatilidade (desvio-padrão diário)", ".1%")),
@@ -823,15 +851,46 @@ def tabela_composicao(composicao: pd.DataFrame, dim_produto: pd.DataFrame, carte
             "Custo": formatar_moeda(p.custo_brl),
             "Sobra": formatar_moeda(p.sobra_brl),
             "Caixa": "—",
+            "Observação": (
+                f"0 unidades: preço de compra acima de {formatar_moeda(p.valor_alocado_brl)}"
+                if int(p.unidades) == 0 else ""
+            ),
         }
         for p in posicoes.itertuples()
     ]
     if len(caixa):
         saida.append({
             "Item": "Caixa", "Acabamento": "—", "Unidades": "—", "Preço de compra": "—",
-            "Custo": "—", "Sobra": "—", "Caixa": formatar_moeda(caixa["caixa_brl"].iloc[0]),
+            "Custo": "—", "Sobra": "—", "Caixa": formatar_moeda(caixa["caixa_brl"].iloc[0]), "Observação": "",
         })
-    return pd.DataFrame(saida, columns=["Item", "Acabamento", "Unidades", "Preço de compra", "Custo", "Sobra", "Caixa"])
+    return pd.DataFrame(
+        saida,
+        columns=["Item", "Acabamento", "Unidades", "Preço de compra", "Custo", "Sobra", "Caixa", "Observação"],
+    )
+
+
+_NUMERAIS = {2: "duas", 3: "três", 4: "quatro", 5: "cinco", 6: "seis", 7: "sete", 8: "oito", 9: "nove", 10: "dez"}
+
+
+def aviso_cartas_sem_unidade(composicao: pd.DataFrame, carteira: str) -> str | None:
+    """Aviso quando nenhuma carta da carteira cabe nos R$ 100,00 alocados (todas com 0 unidades)."""
+    linhas_c = composicao[(composicao["carteira"] == carteira) & composicao["product_id"].notna()]
+    cartas = linhas_c[(linhas_c["valor_alocado_brl"] - VALOR_POR_CARTA).abs() < 1e-9]
+    if cartas.empty or (cartas["unidades"] > 0).any():
+        return None
+    n = len(cartas)
+    sujeito = "A única carta não cabe" if n == 1 else f"Nenhuma das {_NUMERAIS.get(n, n)} cartas cabe"
+    destino = "todo o valor ficou em caixa" if len(cartas) == len(linhas_c) else "o valor das cartas ficou em caixa"
+    return f"{sujeito} em {formatar_moeda(VALOR_POR_CARTA)}; {destino}."
+
+
+def dominio_y(valores, referencia: float = ORCAMENTO) -> tuple[float, float]:
+    """Domínio do eixo y a partir dos dados e da referência, com folga de 5% (mínimo R$ 1,00)."""
+    serie = pd.Series(valores, dtype="float64").dropna()
+    minimo = min([referencia, *serie.tolist()])
+    maximo = max([referencia, *serie.tolist()])
+    folga = max((maximo - minimo) * 0.05, 1.0)
+    return minimo - folga, maximo + folga
 
 
 def grafico_carteiras(liquidacao: pd.DataFrame, taxa: float, titulo: str) -> alt.LayerChart:
@@ -844,17 +903,23 @@ def grafico_carteiras(liquidacao: pd.DataFrame, taxa: float, titulo: str) -> alt
     dados = liq[["data", "carteira", "valor", "valor_fmt", "marca"]]
     ordem = _ordem_carteiras(dados["carteira"])
     x = alt.X("data:T", **eixo_data(dados["data"]))
-    y = alt.Y("valor:Q", axis=eixo_numero("Valor de liquidação (R$)"), scale=alt.Scale(zero=False))
-    cor = alt.Color("carteira:N", title="Carteira", sort=ordem, legend=LEGENDA_INTEIRA)
+    # O mesmo `y` (campo, escala e eixo) em todas as camadas: antes, a referência usava
+    # outro campo, sem escala nem eixo, e a escala compartilhada voltava a incluir o zero.
+    y = alt.Y(
+        "valor:Q",
+        axis=alt.Axis(title="Valor de liquidação", labelExpr="'R$ ' + " + _expr_pt(",.2f")),
+        scale=alt.Scale(domain=list(dominio_y(dados["valor"])), zero=False, nice=False),
+    )
+    cor = alt.Color("carteira:N", title="Carteira", sort=ordem, legend=LEGENDA_DIREITA)
     tooltip = [
         alt.Tooltip("carteira:N", title="Carteira"), TOOLTIP_DATA,
         alt.Tooltip("valor_fmt:N", title="Valor"), alt.Tooltip("marca:N", title="Marcação"),
     ]
     linhas = alt.Chart(dados).mark_line(point=True).encode(x=x, y=y, color=cor, tooltip=tooltip)
     referencia = (
-        alt.Chart(pd.DataFrame({"referencia": [ORCAMENTO], "rotulo": [formatar_moeda(ORCAMENTO)]}))
+        alt.Chart(pd.DataFrame({"valor": [ORCAMENTO], "referencia": [formatar_moeda(ORCAMENTO)]}))
         .mark_rule(strokeDash=[6, 4], color="gray")
-        .encode(y="referencia:Q", tooltip=[alt.Tooltip("rotulo:N", title="Valor inicial")])
+        .encode(y=y, tooltip=[alt.Tooltip("referencia:N", title="Valor inicial")])
     )
     marcados = dados[dados["marca"].notna()]
     camadas = [linhas, referencia]
@@ -864,14 +929,14 @@ def grafico_carteiras(liquidacao: pd.DataFrame, taxa: float, titulo: str) -> alt
             .mark_point(shape="diamond", size=160, filled=False, strokeWidth=2, color="black")
             .encode(x=x, y=y, tooltip=tooltip)
         )
-    return alt.layer(*camadas, title=titulo)
+    return alt.layer(*camadas, title=titulo, height=ALTURA_GRAFICO).resolve_scale(y="shared")
 
 
 def secao_carteiras(carteiras: dict[str, pd.DataFrame], dim_produto: pd.DataFrame) -> None:
-    st.subheader("Carteiras de R$ 1.000,00 montadas no primeiro dia")
+    texto.subheader("Carteiras de R$ 1.000,00 montadas no primeiro dia")
     faltando = [t for t in TABELAS_CARTEIRA if t not in carteiras]
     if faltando:
-        st.info(f"Carteiras não encontradas na gold ({', '.join(faltando)}): rode `make gold`.")
+        texto.info(f"Carteiras não encontradas na gold ({', '.join(faltando)}): rode `make gold`.")
         return
     composicao, liquidacao = carteiras["composicao_carteira"], carteiras["liquidacao_carteira"]
     metricas = carteiras["metricas_carteira"]
@@ -882,56 +947,59 @@ def secao_carteiras(carteiras: dict[str, pd.DataFrame], dim_produto: pd.DataFram
 
     pendentes = sorted(set(composicao.loc[composicao["status"] == STATUS_REGRA_PENDENTE, "carteira"]))
     for carteira in pendentes:
-        st.warning(
+        texto.warning(
             f"Carteira {carteira}: regra pendente (ADR-005 sem status Aceito). "
             "Ela não é calculada e fica fora do gráfico, com métricas em branco."
         )
 
     st.altair_chart(grafico_carteiras(liquidacao, taxa, f"Valor de liquidação por dia, {escolha}"), width="stretch")
-    st.caption(
+    texto.caption(
         "Linha tracejada: R$ 1.000,00 investidos no primeiro dia. Losangos: dias com preço carregado "
         "(item sem preço no dia avaliado pelo último preço observado, só nesta avaliação) ou com CDI "
         "pendente (dia útil sem CDI publicado, que rende 0)."
     )
 
-    st.markdown("**Métricas no último dia**")
+    texto.markdown("**Métricas no último dia**")
     st.dataframe(tabela_metricas(metricas, taxa, taxa_parametro), hide_index=True, width="stretch")
-    st.caption(
+    texto.caption(
         "Retorno acumulado = valor no último dia ÷ R$ 1.000,00 − 1; excesso sobre o CDI = retorno − retorno "
         "da cdi com a mesma taxa; perda máxima = maior queda entre um pico e o ponto mais baixo seguinte. "
         "A diferença com − sem taxa mostra a sensibilidade à taxa de venda: zero em dolar e cdi."
     )
 
-    st.markdown("**Composição**")
+    texto.markdown("**Composição**")
     montagem = composicao["data_montagem"].dropna()
     ptax = composicao["ptax_venda"].dropna()
     if len(montagem) and len(ptax):
-        st.caption(
+        texto.caption(
             f"Montagem em {pd.Timestamp(montagem.iloc[0]):%d/%m/%Y} com PTAX de venda "
             f"{formatar_numero(ptax.iloc[0], 4)}; preço de compra = market_price × PTAX de venda, sem taxa na compra."
         )
     for carteira in _ordem_carteiras(composicao["carteira"]):
         linhas_c = composicao[composicao["carteira"] == carteira]
-        st.markdown(f"**{carteira}**: {REGRAS_CARTEIRAS.get(carteira, '')}")
+        texto.markdown(f"**{carteira}**: {REGRAS_CARTEIRAS.get(carteira, '')}")
         if (linhas_c["status"] == STATUS_REGRA_PENDENTE).any():
-            st.warning(f"Carteira {carteira}: regra pendente, sem composição.")
+            texto.warning(f"Carteira {carteira}: regra pendente, sem composição.")
             continue
         posicoes = linhas_c[linhas_c["product_id"].notna()]
         if carteira == "selado":
             if bool(linhas_c["fallback"].fillna(False).any()):
-                st.caption("Booster box sem preço no primeiro dia: fallback para o selado de maior preço (ADR-006).")
+                texto.caption("Booster box sem preço no primeiro dia: fallback para o selado de maior preço (ADR-006).")
             if posicoes.empty:
-                st.info("Nenhum selado com preço no primeiro dia: todo o valor ficou em caixa (ADR-006).")
+                texto.info("Nenhum selado com preço no primeiro dia: todo o valor ficou em caixa (ADR-006).")
             elif (posicoes["unidades"] == 0).all():
-                st.info(
+                texto.info(
                     f"A selado ficou com 0 unidades: o preço de compra "
                     f"({formatar_moeda(posicoes['preco_compra_brl'].iloc[0])}) passa do orçamento de "
                     f"{formatar_moeda(ORCAMENTO)}, e todo o valor ficou em caixa (ADR-006)."
                 )
+        aviso_cartas = aviso_cartas_sem_unidade(composicao, carteira)
+        if aviso_cartas:
+            texto.info(aviso_cartas)
         if carteira == "dolar":
             usd = linhas_c["usd"].dropna()
             if len(usd):
-                st.caption(f"Comprados {formatar_moeda(usd.iloc[0], 'US$')} no primeiro dia.")
+                texto.caption(f"Comprados {formatar_moeda(usd.iloc[0], 'US$')} no primeiro dia.")
         st.dataframe(tabela_composicao(composicao, dim_produto, carteira), hide_index=True, width="stretch")
 
 
@@ -994,30 +1062,30 @@ def placar_turma(gold_turma: pd.DataFrame, carteira_perda: str = "cesta_raras") 
 
 
 def secao_placar(gold_turma: pd.DataFrame | None, erro: str | None, fato: pd.DataFrame, dim_colecao: pd.DataFrame) -> None:
-    st.subheader("Placar da turma")
-    st.caption(
+    texto.subheader("Placar da turma")
+    texto.caption(
         "Lê `gold_turma/carteira/` de todas as coleções disponíveis, somente leitura (RF-28), "
         "com o retorno acumulado no último dia de cada coleção, na taxa de venda gravada por ela."
     )
     if erro:
-        st.error(f"Não foi possível ler a gold_turma: {erro}.")
+        texto.error(f"Não foi possível ler a gold_turma: {erro}.")
         return
     if gold_turma is None:
-        st.info(f"gold_turma não configurada: com `{VARIAVEL_GOLD_LOCAL}`, defina também `{VARIAVEL_GOLD_TURMA_LOCAL}`.")
+        texto.info(f"gold_turma não configurada: com `{VARIAVEL_GOLD_LOCAL}`, defina também `{VARIAVEL_GOLD_TURMA_LOCAL}`.")
         return
     if gold_turma.empty:
-        st.warning("Nenhuma gold_turma encontrada em `gold_turma/carteira/`: rode `make gold`.")
+        texto.warning("Nenhuma gold_turma encontrada em `gold_turma/carteira/`: rode `make gold`.")
         return
     ids = sorted(int(g) for g in gold_turma["group_id"].dropna().unique())
     ids_gold = sorted(int(g) for g in fato["group_id"].dropna().unique())
     rotulos = rotulos_colecoes(dim_colecao, sorted(set(ids) | set(ids_gold)))
     if GROUP_ID_DRI not in ids:
-        st.warning("A gold_turma da DRI não foi encontrada: rode `make gold`.")
+        texto.warning("A gold_turma da DRI não foi encontrada: rode `make gold`.")
     if ids == [GROUP_ID_DRI]:
-        st.warning(AVISO_PLACAR_SO_DRI)
+        texto.warning(AVISO_PLACAR_SO_DRI)
     sem_turma = [g for g in ids_gold if g not in ids]
     if sem_turma:
-        st.warning(
+        texto.warning(
             "Coleções com silver na gold, mas sem gold_turma (fora do placar): "
             + ", ".join(rotulos[g] for g in sem_turma) + "."
         )
@@ -1033,7 +1101,7 @@ def secao_placar(gold_turma: pd.DataFrame | None, erro: str | None, fato: pd.Dat
         p, u = dri["primeiro"].iloc[0], dri["ultimo"].iloc[0]
         diferentes = resumo[(resumo["primeiro"] != p) | (resumo["ultimo"] != u)]
         if len(diferentes):
-            st.warning(
+            texto.warning(
                 f"Coleções com período diferente da DRI ({p:%d/%m} a {u:%d/%m}); o retorno é o do último dia de "
                 "cada uma: " + ", ".join(
                     f"{rotulos[int(r.group_id)]} ({r.primeiro:%d/%m} a {r.ultimo:%d/%m})" for r in diferentes.itertuples()
@@ -1043,10 +1111,10 @@ def secao_placar(gold_turma: pd.DataFrame | None, erro: str | None, fato: pd.Dat
     (a, n_a), (b, n_b) = placar["selado_cdi"], placar["cesta_dolar"]
     menor = ", ".join(rotulos[g] for g in placar["menor_perda"]) or "—"
     c1, c2, c3 = st.columns(3)
-    c1.metric("Selado acima da cdi", f"{a} de {n_a}")
-    c2.metric("Cesta_raras acima da dolar", f"{b} de {n_b}")
-    c3.metric(f"Menor perda máxima ({carteira})", menor)
-    st.caption(
+    c1.metric(escapar_cifrao("Selado acima da cdi"), f"{a} de {n_a}")
+    c2.metric(escapar_cifrao("Cesta_raras acima da dolar"), f"{b} de {n_b}")
+    c3.metric(escapar_cifrao(f"Menor perda máxima ({carteira})"), menor)
+    texto.caption(
         f"Menor perda máxima da carteira {carteira}: {formatar_percentual(placar['valor_menor_perda'])}. "
         "Empate não conta como superou."
     )
@@ -1076,7 +1144,7 @@ def main() -> None:
     try:
         gold = carregar_gold(fonte_gold())
     except Exception as erro:  # mensagem sem credenciais (RNF-08)
-        st.error(f"Não foi possível ler a gold: {type(erro).__name__}. Rode `make gold` e confira o `.env`.")
+        texto.error(f"Não foi possível ler a gold: {type(erro).__name__}. Rode `make gold` e confira o `.env`.")
         st.stop()
 
     gold = dict(gold)
@@ -1098,8 +1166,8 @@ def main() -> None:
     rotulos = rotulos_colecoes(dim_colecao, group_ids)
     so_dri = group_ids == [GROUP_ID_DRI]
 
-    st.title(f"Painel: {nome}")
-    st.caption(f"Data de corte: {ultimo:%d/%m/%Y}. Valores em {moeda} ({simbolo}).")
+    texto.title(f"Painel: {nome}")
+    texto.caption(f"Data de corte: {ultimo:%d/%m/%Y}. Valores em {moeda} ({simbolo}).")
     aviso_periodo_curto(primeiro, ultimo)
 
     con = conectar_gold(gold)

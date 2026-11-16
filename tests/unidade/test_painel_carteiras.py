@@ -30,6 +30,14 @@ gold_turma das outras coleções (retorno no último dia):
   selado = 0 (série 1000; 1000; 1000,50; 1000,50 nunca cai).
 Placar: selado "2 de 3", cesta "1 de 3", menor perda da cesta_raras: OUTB;
 da selado: DRI.
+
+Ajuste após o `make painel` (T-47):
+- Carta 12 a US$ 30 → preço de compra 30 × 5,00 = R$ 150,00 > R$ 100,00: entra
+  na cesta_raras (é a mais cara) com 0 unidades, e a Carta 01 e a Carta 02 ficam
+  fora das dez. As contas acima não mudam: a Carta 12 tem preço constante.
+- Variante `cartas_caras`: + US$ 20 em todas as cartas (exceto Code Card); a
+  mais barata passa a US$ 26 → R$ 130,00 > R$ 100,00: nenhuma das dez cartas da
+  cesta_raras e nenhuma das cinco Illustration Rare da propria compra unidade.
 """
 
 import datetime as dt
@@ -37,6 +45,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import socket
 
 from conftest import RedeBloqueadaError
@@ -73,6 +82,7 @@ PRODUTOS = {
 }
 PRODUTOS[20] = ("Carta 10", "carta", "Special Illustration Rare", [15.0, 15.0, None, 15.0])
 PRODUTOS[21] = ("Carta 11", "carta", "Special Illustration Rare", [17.0, 17.0, 17.0, 14.0])
+PRODUTOS[22] = ("Carta 12", "carta", "Special Illustration Rare", [30.0] * 4)
 CDI = {DIAS[0]: (0.0, False), DIAS[1]: (0.05, False), DIAS[2]: (0.0, True), DIAS[3]: (0.05, False)}
 
 CDI_OUT = [1000.0, 1000.5, 1001.0, 1001.5]
@@ -137,11 +147,13 @@ def _copiar(con, sql, destino: Path):
     con.execute(f"COPY ({sql}) TO '{destino}' (FORMAT parquet)")
 
 
-def _gold(pasta: Path, turma: Path, regra_propria: bool, com_outras: bool) -> None:
+def _gold(pasta: Path, turma: Path, regra_propria: bool, com_outras: bool, cartas_caras: bool = False) -> None:
     """Gold da DRI (com OUTC só no fato), carteiras pelo código real e gold_turma."""
     con = duckdb.connect()
     fato, prod = [], []
     for pid, (nome, tipo, raridade, precos) in PRODUTOS.items():
+        if cartas_caras and tipo == "carta" and raridade != "Code Card":
+            precos = [None if v is None else v + 20.0 for v in precos]
         rar = "NULL" if raridade is None else f"'{raridade}'"
         prod.append(f"({GID}, {pid}, '{nome}', '{tipo}', {rar}, '{pid:03d}', NULL, NULL)")
         for dia, usd in zip(DIAS, precos):
@@ -217,12 +229,15 @@ def _gold(pasta: Path, turma: Path, regra_propria: bool, com_outras: bool) -> No
 
 @pytest.fixture
 def painel(tmp_path, monkeypatch):
-    def _abrir(regra_propria=True, com_outras=True):
-        nome = f"{'propria' if regra_propria else 'pendente'}_{'turma' if com_outras else 'so_dri'}"
+    def _abrir(regra_propria=True, com_outras=True, cartas_caras=False):
+        nome = (
+            f"{'propria' if regra_propria else 'pendente'}_{'turma' if com_outras else 'so_dri'}"
+            f"{'_caras' if cartas_caras else ''}"
+        )
         pasta, turma = tmp_path / nome / "gold", tmp_path / nome / "gold_turma"
         pasta.mkdir(parents=True)
         turma.mkdir()
-        _gold(pasta, turma, regra_propria, com_outras)
+        _gold(pasta, turma, regra_propria, com_outras, cartas_caras)
         monkeypatch.setenv("PAINEL_GOLD_DIR", str(pasta))
         monkeypatch.setenv("PAINEL_GOLD_TURMA_DIR", str(turma))
         at = AppTest.from_file(str(APP), default_timeout=TIMEOUT).run()
@@ -254,8 +269,22 @@ def _metricas(at) -> pd.DataFrame:
     return tabela.set_index("Carteira")
 
 
+def _sem_escape(corpo: str) -> str:
+    return corpo.replace("\\$", "$")
+
+
 def _placar(at) -> dict[str, str]:
-    return {m.label: m.value for m in at.metric}
+    return {_sem_escape(m.label): m.value for m in at.metric}
+
+
+def _textos(at) -> list[str]:
+    """Corpo de todo texto Markdown renderizado (como o Streamlit recebe, antes do escape ser lido)."""
+    corpos = []
+    for tipo in ("markdown", "caption", "info", "warning", "error", "success", "title", "subheader", "header"):
+        corpos += [e.value for e in at.get(tipo)]
+    corpos += [m.label for m in at.metric]
+    corpos += [w.label for tipo in ("number_input", "radio", "selectbox") for w in at.get(tipo)]
+    return corpos
 
 
 # ---------------------------------------------------------------- abas e gráfico (RF-24)
@@ -280,7 +309,7 @@ def test_grafico_com_referencia_em_1000_e_dias_marcados(painel):
     linhas = next(d for d in camadas if "carteira" in d and "marca" in d and len(d["data"]) > 10)
     assert set(linhas["carteira"]) == {"selado", "cesta_raras", "propria", "dolar", "cdi"}
     referencia = next(d for d in camadas if "referencia" in d)
-    assert referencia["referencia"] == [1000.0]
+    assert referencia["valor"] == [1000.0] and referencia["referencia"] == ["R$ 1.000,00"]
 
     marcados = next(d for d in camadas if "marca" in d and len(d["data"]) <= 10)
     pontos = {(d.date(), c): m for d, c, m in zip(marcados["data"], marcados["carteira"], marcados["marca"])}
@@ -353,9 +382,9 @@ def test_composicao_selado_com_zero_unidades_e_tudo_em_caixa(painel):
     assert box["Custo"] == "R$ 0,00"
     assert box["Sobra"] == "R$ 1.000,00"
     assert selado[selado["Item"] == "Caixa"].iloc[0]["Caixa"] == "R$ 1.000,00"
-    avisos = [i.value for i in at.info]
+    avisos = [_sem_escape(i.value) for i in at.info]
     assert any("0 unidades" in a and "R$ 1.250,00" in a and "ADR-006" in a for a in avisos)
-    markdown = [m.value for m in at.markdown]
+    markdown = [_sem_escape(m.value) for m in at.markdown]
     assert any(m.startswith("**selado**: Compra o booster box") for m in markdown)
     assert any(m.startswith("**propria**:") and "ADR-005" in m for m in markdown)
 
@@ -363,8 +392,9 @@ def test_composicao_selado_com_zero_unidades_e_tudo_em_caixa(painel):
 def test_composicao_cesta_raras_e_propria(painel):
     at, _, _ = painel()
     tabelas = _tabela(at, "Unidades")
-    cesta = next(t for t in tabelas if "Carta 11" in set(t["Item"]) and "Carta 01" not in set(t["Item"]))
+    cesta = next(t for t in tabelas if "Carta 12" in set(t["Item"]))
     assert len(cesta) == 11  # dez cartas e o caixa; Code Card fora
+    assert not {"Carta 01", "Carta 02"} & set(cesta["Item"])
     assert "Code Card" not in set(cesta["Item"])
     # Carta 11: US$ 17 × 5,00 = R$ 85,00 → 1 unidade, sobra R$ 15,00
     c11 = cesta[cesta["Item"] == "Carta 11"].iloc[0]
@@ -465,3 +495,103 @@ def test_painel_nao_grava_nada(painel):
     at.run()
     assert not at.exception
     assert _hashes(pasta, turma) == antes
+
+
+# ---------------------------------------------------------------- ajuste após o make painel
+
+
+def test_eixo_y_com_dominio_dos_dados_e_rotulos_em_reais(painel):
+    at, _, _ = painel()
+    spec, camadas = _grafico_carteiras(at)
+    linhas = next(d for d in camadas if "carteira" in d and len(d["data"]) > 10)
+    ys = [c["encoding"]["y"] for c in spec["layer"]]
+    # mesmo campo, escala e eixo em todas as camadas, inclusive a referência
+    assert all(y == ys[0] for y in ys)
+    y = ys[0]
+    assert y["field"] == "valor"
+    assert y["scale"]["zero"] is False
+    baixo, alto = y["scale"]["domain"]
+    # o domínio cobre os dados e a referência de R$ 1.000,00, sem descer a 0
+    assert baixo <= min(linhas["valor"]) and alto >= max(linhas["valor"])
+    assert baixo < 1000.0 < alto
+    assert baixo > 0.5 * min(linhas["valor"])
+    assert y["axis"]["labelExpr"].startswith("'R$ ' + ")
+    referencia = next(d for d in camadas if "referencia" in d)
+    assert referencia["valor"] == [1000.0]
+
+
+def test_dominio_y_a_partir_dos_dados():
+    app = _carregar_modulo()
+    # propria ≈ 875 e dolar ≈ 1.028 (dados reais): folga = (1028 − 875) × 5% = 7,65
+    baixo, alto = app.dominio_y([875.0, 1028.0, None])
+    assert (baixo, alto) == (pytest.approx(867.35), pytest.approx(1035.65))
+    # tudo acima de 1.000: a referência entra no domínio; folga = (1100 − 1000) × 5% = 5
+    assert app.dominio_y([1050.0, 1100.0]) == (pytest.approx(995.0), pytest.approx(1105.0))
+    # série constante igual à referência: folga mínima de R$ 1,00
+    assert app.dominio_y([1000.0]) == (pytest.approx(999.0), pytest.approx(1001.0))
+
+
+def test_escapar_cifrao():
+    app = _carregar_modulo()
+    assert app.escapar_cifrao("R$ 1,00 a R$ 2,00") == r"R\$ 1,00 a R\$ 2,00"
+    assert app.escapar_cifrao(r"já R\$ 3") == r"já R\$ 3"  # sem escape duplo
+    assert app.escapar_cifrao("sem cifrão") == "sem cifrão"
+
+
+@pytest.mark.parametrize("moeda", ["reais", "dólar"])
+def test_nenhum_texto_do_painel_tem_cifrao_sem_escape(painel, moeda):
+    at, _, _ = painel(cartas_caras=True)
+    at.sidebar.radio[0].set_value(moeda)
+    at.run()
+    assert not at.exception, at.exception
+    corpos = _textos(at)
+    sem_escape = [c for c in corpos if re.search(r"(?<!\\)\$", c)]
+    assert sem_escape == []
+    # e o "R$" continua lá, escapado, em todas as abas que o mostram
+    com_reais = [c for c in corpos if "R\\$" in c]
+    assert any("R\\$ 1.250,00" in c for c in com_reais)  # aviso da selado (Carteiras)
+    assert any("cabe em R\\$ 100,00" in c for c in com_reais)  # aviso das cartas (Carteiras)
+    assert any("US\\$" in c for c in corpos)  # filtros da barra lateral e legendas das perguntas
+
+
+def test_carta_com_zero_unidades_aparece_na_composicao(painel):
+    at, _, _ = painel()
+    cesta = next(t for t in _tabela(at, "Unidades") if "Carta 12" in set(t["Item"]))
+    c12 = cesta[cesta["Item"] == "Carta 12"].iloc[0]
+    # US$ 30 × 5,00 = R$ 150,00 > R$ 100,00 → 0 unidades, toda a alocação de sobra
+    assert (c12["Unidades"], c12["Preço de compra"], c12["Sobra"]) == ("0", "R$ 150,00", "R$ 100,00")
+    assert c12["Observação"] == "0 unidades: preço de compra acima de R$ 100,00"
+    assert cesta[cesta["Item"] == "Carta 11"].iloc[0]["Observação"] == ""
+    # só uma carta fica sem unidade: sem o aviso de "nenhuma das dez"
+    assert not any("cabe em" in _sem_escape(i.value) for i in at.info)
+
+
+def test_todas_as_cartas_com_zero_unidades_avisam(painel):
+    at, _, _ = painel(cartas_caras=True)
+    avisos = [_sem_escape(i.value) for i in at.info]
+    assert "Nenhuma das dez cartas cabe em R$ 100,00; todo o valor ficou em caixa." in avisos
+    # propria: o Elite Trainer Box ainda compra 2 unidades; só o valor das cartas vai para o caixa
+    assert "Nenhuma das cinco cartas cabe em R$ 100,00; o valor das cartas ficou em caixa." in avisos
+    cesta = next(t for t in _tabela(at, "Unidades") if "Carta 12" in set(t["Item"]))
+    assert set(cesta.loc[cesta["Item"] != "Caixa", "Unidades"]) == {"0"}
+    assert cesta[cesta["Item"] == "Caixa"].iloc[0]["Caixa"] == "R$ 1.000,00"
+
+
+# ---------------------------------------------------------------- altura dos gráficos
+
+
+def test_grafico_das_carteiras_com_altura_fixa_e_legenda_a_direita(painel):
+    at, _, _ = painel()
+    spec, _ = _grafico_carteiras(at)
+    assert spec["height"] == 420
+    legenda = spec["layer"][0]["encoding"]["color"]["legend"]
+    assert legenda["orient"] == "right"
+
+
+def test_todos_os_graficos_do_painel_tem_a_mesma_altura(painel):
+    at, _, _ = painel()
+    app = _carregar_modulo()
+    specs = [json.loads(g.proto.spec) for g in at.get("vega_lite_chart")]
+    # série do item, P2, P3, P4, P5 e carteiras
+    assert len(specs) == 6
+    assert [s.get("height") for s in specs] == [app.ALTURA_GRAFICO] * 6
