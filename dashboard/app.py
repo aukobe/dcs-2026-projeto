@@ -26,6 +26,16 @@ Peças reutilizáveis pelas seções das perguntas (T-45):
 - imagem e link do produto, com "imagem indisponível" e "link indisponível"
   (`mostrar_produto`, RF-20).
 
+Carteiras e placar da turma (T-47; RF-24, RF-25, RF-28): a aba "Carteiras"
+lê `composicao_carteira`, `liquidacao_carteira`, `liquidacao_item` e
+`metricas_carteira` da gold da DRI (gravadas pelo `make gold`, T-44), sem
+recalcular carteira nenhuma; a aba "Placar da turma" lê
+`gold_turma/carteira/*/carteira.parquet` de todas as coleções, somente leitura,
+e só agrega retorno no último dia e perda máxima. Gancho de teste e de
+desenvolvimento: `PAINEL_GOLD_TURMA_DIR` aponta para uma pasta com
+`group_id=<id>/carteira.parquet`; com `PAINEL_GOLD_DIR` e sem ele, o placar não
+vai ao S3 e avisa que a gold_turma não está configurada.
+
 Executado com `make painel` (`streamlit run dashboard/app.py`); o `main()` só
 roda quando o arquivo é o script principal, para que as funções possam ser
 importadas.
@@ -43,6 +53,8 @@ import pandas as pd
 import streamlit as st
 
 from tcg.config import ler_parametros
+from tcg.gold.carteiras import CARTEIRAS, ORCAMENTO, STATUS_REGRA_PENDENTE
+from tcg.gold.metricas_carteira import perda_maxima
 from tcg.gold.perguntas import (
     p1_rankings,
     p2_indice,
@@ -61,6 +73,11 @@ TABELAS_GOLD = (
     "dim_colecao",
 )
 VARIAVEL_GOLD_LOCAL = "PAINEL_GOLD_DIR"
+# Tabelas das carteiras (T-44): opcionais; sem elas, a aba "Carteiras" só avisa
+TABELAS_CARTEIRA = ("composicao_carteira", "liquidacao_carteira", "liquidacao_item", "metricas_carteira")
+VARIAVEL_GOLD_TURMA_LOCAL = "PAINEL_GOLD_TURMA_DIR"
+PREFIXO_GOLD_TURMA = "gold_turma/carteira"
+COLUNAS_GOLD_TURMA = ("data", "group_id", "carteira", "valor_brl", "retorno_acumulado", "taxa_venda")
 
 MOEDAS = ("reais", "dólar")
 COLUNA_MOEDA = {"reais": "market_price_brl", "dólar": "market_price"}
@@ -82,7 +99,25 @@ SERIE_P2_SELADOS = "Selados (cesta fixa)"
 SERIE_P2_RARAS = "Double Rare em diante (cesta fixa)"
 # Legenda abaixo do gráfico e sem limite de largura do rótulo: nada aparece cortado
 LEGENDA_INTEIRA = alt.Legend(orient="bottom", direction="vertical", labelLimit=0)
-ABAS = ("Itens", "P1: alta e queda", "P2: selados × raras", "P3: coleções", "P4: concentração", "P5: risco")
+ABAS = (
+    "Itens", "P1: alta e queda", "P2: selados × raras", "P3: coleções", "P4: concentração", "P5: risco",
+    "Carteiras", "Placar da turma",
+)
+AVISO_PLACAR_SO_DRI = (
+    "Faltam dados de outras coleções na gold_turma: o placar mostra só a DRI (RF-28). "
+    "Ele fica completo quando as outras coleções gravarem `gold_turma/carteira/`."
+)
+REGRAS_CARTEIRAS = {
+    "selado": "Compra o booster box da coleção com R$ 1.000,00, em unidades inteiras, ao preço do "
+    "primeiro dia; só se ele não tiver preço, o selado de maior preço (ADR-006); a sobra fica em caixa.",
+    "cesta_raras": "R$ 100,00 em cada um dos dez itens de carta (sem Code Card) de maior market_price "
+    "no primeiro dia, em unidades inteiras; a sobra fica em caixa.",
+    "propria": "R$ 500,00 no selado de maior preço de compra até R$ 500,00 e R$ 100,00 em cada uma das "
+    "cinco Illustration Rare de maior market_price no primeiro dia (ADR-005); a sobra fica em caixa.",
+    "dolar": "R$ 1.000,00 convertidos em dólar pela PTAX de venda do primeiro dia e avaliados pela "
+    "PTAX de compra de cada dia.",
+    "cdi": "R$ 1.000,00 rendendo o CDI em cada dia útil.",
+}
 
 
 # ---------------------------------------------------------------- leitura da gold
@@ -93,14 +128,16 @@ def _literal(valor: str) -> str:
 
 
 def _ler_local(pasta: Path) -> dict[str, pd.DataFrame]:
+    """Tabelas obrigatórias da gold e, se existirem, as das carteiras."""
     con = duckdb.connect()
     try:
+        tabelas = [*TABELAS_GOLD, *(t for t in TABELAS_CARTEIRA if (pasta / f"{t}.parquet").exists())]
         return {
             tabela: con.sql(
                 f"SELECT * FROM read_parquet({_literal(pasta / f'{tabela}.parquet')}, "
                 "hive_partitioning = false)"
             ).df()
-            for tabela in TABELAS_GOLD
+            for tabela in tabelas
         }
     finally:
         con.close()
@@ -112,15 +149,19 @@ def _ler_s3() -> dict[str, pd.DataFrame]:
 
     config = ler_config_minio()
     con = conectar(config)
+
+    def ler(tabela: str) -> pd.DataFrame:
+        caminho = caminho_s3(config.bucket, f"{PREFIXO_GOLD}/{tabela}.parquet")
+        return con.sql(f"SELECT * FROM read_parquet({_literal(caminho)}, hive_partitioning = false)").df()
+
     try:
-        return {
-            tabela: con.sql(
-                "SELECT * FROM read_parquet("
-                f"{_literal(caminho_s3(config.bucket, f'{PREFIXO_GOLD}/{tabela}.parquet'))}, "
-                "hive_partitioning = false)"
-            ).df()
-            for tabela in TABELAS_GOLD
-        }
+        gold = {tabela: ler(tabela) for tabela in TABELAS_GOLD}
+        for tabela in TABELAS_CARTEIRA:  # opcionais: ausentes antes do primeiro `make gold` com carteiras
+            try:
+                gold[tabela] = ler(tabela)
+            except duckdb.Error:
+                pass
+        return gold
     finally:
         con.close()
 
@@ -134,6 +175,60 @@ def carregar_gold(fonte: str) -> dict[str, pd.DataFrame]:
 def fonte_gold() -> str:
     pasta = os.environ.get(VARIAVEL_GOLD_LOCAL, "").strip()
     return pasta or "s3"
+
+
+def _sql_gold_turma(origem: str) -> str:
+    colunas = ", ".join(c if c != "data" else "CAST(data AS DATE) AS data" for c in COLUNAS_GOLD_TURMA)
+    return (
+        f"SELECT {colunas} FROM read_parquet({_literal(origem)}, "
+        "hive_partitioning = false, union_by_name = true) ORDER BY group_id, carteira, data"
+    )
+
+
+def _gold_turma_vazia() -> pd.DataFrame:
+    return pd.DataFrame(columns=list(COLUNAS_GOLD_TURMA))
+
+
+@st.cache_data(ttl=3600, show_spinner="Lendo a gold_turma...")
+def carregar_gold_turma(fonte: str) -> pd.DataFrame:
+    """`gold_turma/carteira/` de todas as coleções, só leitura (RF-28).
+
+    `fonte` é uma pasta local com `group_id=<id>/carteira.parquet` ou `"s3"`.
+    Sem nenhum arquivo, devolve uma tabela vazia; só as colunas do contrato.
+    """
+    if fonte != "s3":
+        pasta = Path(fonte)
+        if not any(pasta.glob("*/carteira.parquet")):
+            return _gold_turma_vazia()
+        con = duckdb.connect()
+        try:
+            return con.sql(_sql_gold_turma(str(pasta / "*" / "carteira.parquet"))).df()
+        finally:
+            con.close()
+
+    from tcg.config import ler_config_minio
+    from tcg.lake.duckdb import caminho_s3, conectar
+
+    config = ler_config_minio()
+    con = conectar(config)
+    try:
+        return con.sql(_sql_gold_turma(caminho_s3(config.bucket, f"{PREFIXO_GOLD_TURMA}/*/carteira.parquet"))).df()
+    except duckdb.IOException as erro:
+        if "No files found" in str(erro):
+            return _gold_turma_vazia()
+        raise
+    finally:
+        con.close()
+
+
+def fonte_gold_turma() -> str | None:
+    """Pasta do gancho, `"s3"` ou None (gold local sem gold_turma configurada)."""
+    pasta = os.environ.get(VARIAVEL_GOLD_TURMA_LOCAL, "").strip()
+    if pasta:
+        return pasta
+    if os.environ.get(VARIAVEL_GOLD_LOCAL, "").strip():
+        return None
+    return "s3"
 
 
 # ---------------------------------------------------------------- formatação pt-BR
@@ -164,6 +259,16 @@ def formatar_percentual(fracao, casas: int = 2) -> str:
     if _nulo(fracao):
         return "—"
     return f"{formatar_numero(float(fracao) * 100, casas)}%"
+
+
+def formatar_pp(diferenca, casas: int = 2) -> str:
+    """Diferença de frações em pontos percentuais: −0.12 → "-12,00 p.p."; 0 → "0,00 p.p."."""
+    if _nulo(diferenca):
+        return "—"
+    valor = float(diferenca) * 100
+    if abs(valor) < 0.5 * 10 ** -casas:
+        valor = 0.0  # sem "-0,00"
+    return f"{formatar_numero(valor, casas)} p.p."
 
 
 def formatar_data(valor) -> str:
@@ -648,6 +753,316 @@ def secao_p5(con, moeda: str, minimo: float, rotulos: dict[int, str], so_dri: bo
     seletor_item(pontos, "item_p5", lambda r: f"{r['nome']} ({r['acabamento']}), {r['colecao']}")
 
 
+# ---------------------------------------------------------------- carteiras (T-47)
+
+
+def _ordem_carteiras(carteiras) -> list[str]:
+    presentes = list(dict.fromkeys(carteiras))
+    return [c for c in CARTEIRAS if c in presentes] + [c for c in presentes if c not in CARTEIRAS]
+
+
+def taxas_da_gold(liquidacao: pd.DataFrame) -> tuple[float, float]:
+    """(taxa do parâmetro, 0): a maior taxa_venda gravada pelo `make gold` e a taxa 0."""
+    taxas = sorted(float(t) for t in liquidacao["taxa_venda"].dropna().unique())
+    return (taxas[-1] if taxas else 0.0), 0.0
+
+
+def marca_dia(preco_carregado, cdi_pendente) -> str | None:
+    """Marcação do dia no gráfico das carteiras (RF-24)."""
+    partes = [t for t, v in (("preço carregado", preco_carregado), ("CDI pendente", cdi_pendente)) if bool(v)]
+    return " e ".join(partes) or None
+
+
+def tabela_metricas(metricas: pd.DataFrame, taxa: float, taxa_parametro: float) -> pd.DataFrame:
+    """Métricas da taxa escolhida e o retorno com e sem taxa lado a lado (RF-25).
+
+    A diferença (com taxa − sem taxa, em p.p.) é o ponto de sensibilidade à
+    taxa de venda: zero em dolar e cdi. Nada é recalculado; tudo vem da
+    `metricas_carteira` da gold.
+    """
+    m = metricas.assign(taxa_venda=metricas["taxa_venda"].astype(float))
+    linhas = []
+    for carteira in _ordem_carteiras(m["carteira"]):
+        da = m[m["carteira"] == carteira]
+        escolhida = da[da["taxa_venda"] == taxa]
+        com = da.loc[da["taxa_venda"] == taxa_parametro, "retorno_acumulado"]
+        sem = da.loc[da["taxa_venda"] == 0.0, "retorno_acumulado"]
+        r_com = com.iloc[0] if len(com) else None
+        r_sem = sem.iloc[0] if len(sem) else None
+        e = escolhida.iloc[0] if len(escolhida) else None
+        dias = None if e is None or _nulo(e["dias_preco_carregado"]) else int(e["dias_preco_carregado"])
+        linhas.append({
+            "Carteira": carteira,
+            "Status": "—" if e is None else e["status"],
+            "Valor no último dia": formatar_moeda(None if e is None else e["valor_final_brl"]),
+            "Retorno acumulado": formatar_percentual(None if e is None else e["retorno_acumulado"]),
+            "Excesso sobre o CDI": formatar_percentual(None if e is None else e["excesso_cdi"]),
+            "Perda máxima": formatar_percentual(None if e is None else e["perda_maxima"]),
+            "Dias com preço carregado": "—" if dias is None else str(dias),
+            f"Retorno com taxa ({formatar_percentual(taxa_parametro, 0)})": formatar_percentual(r_com),
+            "Retorno sem taxa (0%)": formatar_percentual(r_sem),
+            "Diferença com − sem taxa": formatar_pp(
+                None if _nulo(r_com) or _nulo(r_sem) else float(r_com) - float(r_sem)
+            ),
+        })
+    return pd.DataFrame(linhas)
+
+
+def tabela_composicao(composicao: pd.DataFrame, dim_produto: pd.DataFrame, carteira: str) -> pd.DataFrame:
+    """Posições de uma carteira (item, unidades, preço de compra, custo, sobra) e a linha de caixa."""
+    linhas_c = composicao[composicao["carteira"] == carteira]
+    nomes = dim_produto[dim_produto["group_id"] == GROUP_ID_DRI].set_index("product_id")["nome"]
+    posicoes = linhas_c[linhas_c["product_id"].notna()]
+    caixa = linhas_c[linhas_c["product_id"].isna()]
+    saida = [
+        {
+            "Item": str(nomes.get(int(p.product_id), f"product_id {int(p.product_id)}")),
+            "Acabamento": p.acabamento,
+            "Unidades": str(int(p.unidades)),
+            "Preço de compra": formatar_moeda(p.preco_compra_brl),
+            "Custo": formatar_moeda(p.custo_brl),
+            "Sobra": formatar_moeda(p.sobra_brl),
+            "Caixa": "—",
+        }
+        for p in posicoes.itertuples()
+    ]
+    if len(caixa):
+        saida.append({
+            "Item": "Caixa", "Acabamento": "—", "Unidades": "—", "Preço de compra": "—",
+            "Custo": "—", "Sobra": "—", "Caixa": formatar_moeda(caixa["caixa_brl"].iloc[0]),
+        })
+    return pd.DataFrame(saida, columns=["Item", "Acabamento", "Unidades", "Preço de compra", "Custo", "Sobra", "Caixa"])
+
+
+def grafico_carteiras(liquidacao: pd.DataFrame, taxa: float, titulo: str) -> alt.LayerChart:
+    """Valor de liquidação por dia e carteira, referência em R$ 1.000,00 e dias marcados (RF-24)."""
+    liq = liquidacao[(liquidacao["taxa_venda"].astype(float) == taxa) & liquidacao["valor_brl"].notna()].copy()
+    liq["data"] = pd.to_datetime(liq["data"])
+    liq["valor"] = liq["valor_brl"].astype(float)
+    liq["valor_fmt"] = liq["valor"].map(formatar_moeda)
+    liq["marca"] = [marca_dia(p, c) for p, c in zip(liq["preco_carregado"], liq["cdi_pendente"])]
+    dados = liq[["data", "carteira", "valor", "valor_fmt", "marca"]]
+    ordem = _ordem_carteiras(dados["carteira"])
+    x = alt.X("data:T", **eixo_data(dados["data"]))
+    y = alt.Y("valor:Q", axis=eixo_numero("Valor de liquidação (R$)"), scale=alt.Scale(zero=False))
+    cor = alt.Color("carteira:N", title="Carteira", sort=ordem, legend=LEGENDA_INTEIRA)
+    tooltip = [
+        alt.Tooltip("carteira:N", title="Carteira"), TOOLTIP_DATA,
+        alt.Tooltip("valor_fmt:N", title="Valor"), alt.Tooltip("marca:N", title="Marcação"),
+    ]
+    linhas = alt.Chart(dados).mark_line(point=True).encode(x=x, y=y, color=cor, tooltip=tooltip)
+    referencia = (
+        alt.Chart(pd.DataFrame({"referencia": [ORCAMENTO], "rotulo": [formatar_moeda(ORCAMENTO)]}))
+        .mark_rule(strokeDash=[6, 4], color="gray")
+        .encode(y="referencia:Q", tooltip=[alt.Tooltip("rotulo:N", title="Valor inicial")])
+    )
+    marcados = dados[dados["marca"].notna()]
+    camadas = [linhas, referencia]
+    if not marcados.empty:
+        camadas.append(
+            alt.Chart(marcados)
+            .mark_point(shape="diamond", size=160, filled=False, strokeWidth=2, color="black")
+            .encode(x=x, y=y, tooltip=tooltip)
+        )
+    return alt.layer(*camadas, title=titulo)
+
+
+def secao_carteiras(carteiras: dict[str, pd.DataFrame], dim_produto: pd.DataFrame) -> None:
+    st.subheader("Carteiras de R$ 1.000,00 montadas no primeiro dia")
+    faltando = [t for t in TABELAS_CARTEIRA if t not in carteiras]
+    if faltando:
+        st.info(f"Carteiras não encontradas na gold ({', '.join(faltando)}): rode `make gold`.")
+        return
+    composicao, liquidacao = carteiras["composicao_carteira"], carteiras["liquidacao_carteira"]
+    metricas = carteiras["metricas_carteira"]
+    taxa_parametro, _ = taxas_da_gold(liquidacao)
+    opcoes = {f"com taxa de venda ({formatar_percentual(taxa_parametro, 0)})": taxa_parametro, "sem taxa (0%)": 0.0}
+    escolha = st.radio("Taxa de venda na liquidação", list(opcoes), index=0, horizontal=True, key="taxa_carteiras")
+    taxa = opcoes[escolha]
+
+    pendentes = sorted(set(composicao.loc[composicao["status"] == STATUS_REGRA_PENDENTE, "carteira"]))
+    for carteira in pendentes:
+        st.warning(
+            f"Carteira {carteira}: regra pendente (ADR-005 sem status Aceito). "
+            "Ela não é calculada e fica fora do gráfico, com métricas em branco."
+        )
+
+    st.altair_chart(grafico_carteiras(liquidacao, taxa, f"Valor de liquidação por dia, {escolha}"), width="stretch")
+    st.caption(
+        "Linha tracejada: R$ 1.000,00 investidos no primeiro dia. Losangos: dias com preço carregado "
+        "(item sem preço no dia avaliado pelo último preço observado, só nesta avaliação) ou com CDI "
+        "pendente (dia útil sem CDI publicado, que rende 0)."
+    )
+
+    st.markdown("**Métricas no último dia**")
+    st.dataframe(tabela_metricas(metricas, taxa, taxa_parametro), hide_index=True, width="stretch")
+    st.caption(
+        "Retorno acumulado = valor no último dia ÷ R$ 1.000,00 − 1; excesso sobre o CDI = retorno − retorno "
+        "da cdi com a mesma taxa; perda máxima = maior queda entre um pico e o ponto mais baixo seguinte. "
+        "A diferença com − sem taxa mostra a sensibilidade à taxa de venda: zero em dolar e cdi."
+    )
+
+    st.markdown("**Composição**")
+    montagem = composicao["data_montagem"].dropna()
+    ptax = composicao["ptax_venda"].dropna()
+    if len(montagem) and len(ptax):
+        st.caption(
+            f"Montagem em {pd.Timestamp(montagem.iloc[0]):%d/%m/%Y} com PTAX de venda "
+            f"{formatar_numero(ptax.iloc[0], 4)}; preço de compra = market_price × PTAX de venda, sem taxa na compra."
+        )
+    for carteira in _ordem_carteiras(composicao["carteira"]):
+        linhas_c = composicao[composicao["carteira"] == carteira]
+        st.markdown(f"**{carteira}**: {REGRAS_CARTEIRAS.get(carteira, '')}")
+        if (linhas_c["status"] == STATUS_REGRA_PENDENTE).any():
+            st.warning(f"Carteira {carteira}: regra pendente, sem composição.")
+            continue
+        posicoes = linhas_c[linhas_c["product_id"].notna()]
+        if carteira == "selado":
+            if bool(linhas_c["fallback"].fillna(False).any()):
+                st.caption("Booster box sem preço no primeiro dia: fallback para o selado de maior preço (ADR-006).")
+            if posicoes.empty:
+                st.info("Nenhum selado com preço no primeiro dia: todo o valor ficou em caixa (ADR-006).")
+            elif (posicoes["unidades"] == 0).all():
+                st.info(
+                    f"A selado ficou com 0 unidades: o preço de compra "
+                    f"({formatar_moeda(posicoes['preco_compra_brl'].iloc[0])}) passa do orçamento de "
+                    f"{formatar_moeda(ORCAMENTO)}, e todo o valor ficou em caixa (ADR-006)."
+                )
+        if carteira == "dolar":
+            usd = linhas_c["usd"].dropna()
+            if len(usd):
+                st.caption(f"Comprados {formatar_moeda(usd.iloc[0], 'US$')} no primeiro dia.")
+        st.dataframe(tabela_composicao(composicao, dim_produto, carteira), hide_index=True, width="stretch")
+
+
+# ---------------------------------------------------------------- placar da turma (T-47)
+
+
+def placar_turma(gold_turma: pd.DataFrame, carteira_perda: str = "cesta_raras") -> dict:
+    """Placar a partir da gold_turma de todas as coleções (RF-28), sem recalcular carteiras.
+
+    Por coleção: retorno acumulado no último dia de cada carteira e perda máxima
+    da série de valor_brl (`perda_maxima` da T-43). "Superou" é comparação
+    estrita (empate não conta); o denominador conta só as coleções com as duas
+    carteiras com valor no último dia. A menor perda máxima é da
+    `carteira_perda`; empates entram todos.
+    """
+    gt = gold_turma.assign(data=pd.to_datetime(gold_turma["data"]))
+    resumo = []
+    for gid, g in gt.groupby("group_id", sort=True):
+        ultimo = g["data"].max()
+        ret = g[g["data"] == ultimo].set_index("carteira")["retorno_acumulado"]
+        perdas = {}
+        for carteira, s in g.sort_values("data").groupby("carteira"):
+            valores = s["valor_brl"]
+            perdas[carteira] = None if valores.isna().any() or valores.empty else perda_maxima(valores.astype(float).tolist())
+
+        def superou(a: str, b: str):
+            if a not in ret.index or b not in ret.index or _nulo(ret[a]) or _nulo(ret[b]):
+                return None
+            return bool(float(ret[a]) > float(ret[b]))
+
+        linha = {"group_id": int(gid), "primeiro": g["data"].min().date(), "ultimo": ultimo.date()}
+        for carteira in CARTEIRAS:
+            valor = ret.get(carteira)
+            linha[f"retorno_{carteira}"] = None if _nulo(valor) else float(valor)
+            linha[f"perda_{carteira}"] = perdas.get(carteira)
+        linha["selado_superou_cdi"] = superou("selado", "cdi")
+        linha["cesta_superou_dolar"] = superou("cesta_raras", "dolar")
+        resumo.append(linha)
+    resumo = pd.DataFrame(resumo)
+
+    def contagem(coluna: str) -> tuple[int, int]:
+        if resumo.empty:
+            return 0, 0
+        validas = resumo[coluna].dropna()
+        return int(sum(bool(v) for v in validas)), int(len(validas))
+
+    menor, valor_menor = [], None
+    if not resumo.empty:
+        perdas = resumo[["group_id", f"perda_{carteira_perda}"]].dropna()
+        if len(perdas):
+            valor_menor = float(perdas.iloc[:, 1].min())
+            menor = [int(g) for g, v in perdas.itertuples(index=False) if abs(float(v) - valor_menor) < 1e-12]
+    return {
+        "resumo": resumo,
+        "selado_cdi": contagem("selado_superou_cdi"),
+        "cesta_dolar": contagem("cesta_superou_dolar"),
+        "menor_perda": menor,
+        "valor_menor_perda": valor_menor,
+    }
+
+
+def secao_placar(gold_turma: pd.DataFrame | None, erro: str | None, fato: pd.DataFrame, dim_colecao: pd.DataFrame) -> None:
+    st.subheader("Placar da turma")
+    st.caption(
+        "Lê `gold_turma/carteira/` de todas as coleções disponíveis, somente leitura (RF-28), "
+        "com o retorno acumulado no último dia de cada coleção, na taxa de venda gravada por ela."
+    )
+    if erro:
+        st.error(f"Não foi possível ler a gold_turma: {erro}.")
+        return
+    if gold_turma is None:
+        st.info(f"gold_turma não configurada: com `{VARIAVEL_GOLD_LOCAL}`, defina também `{VARIAVEL_GOLD_TURMA_LOCAL}`.")
+        return
+    if gold_turma.empty:
+        st.warning("Nenhuma gold_turma encontrada em `gold_turma/carteira/`: rode `make gold`.")
+        return
+    ids = sorted(int(g) for g in gold_turma["group_id"].dropna().unique())
+    ids_gold = sorted(int(g) for g in fato["group_id"].dropna().unique())
+    rotulos = rotulos_colecoes(dim_colecao, sorted(set(ids) | set(ids_gold)))
+    if GROUP_ID_DRI not in ids:
+        st.warning("A gold_turma da DRI não foi encontrada: rode `make gold`.")
+    if ids == [GROUP_ID_DRI]:
+        st.warning(AVISO_PLACAR_SO_DRI)
+    sem_turma = [g for g in ids_gold if g not in ids]
+    if sem_turma:
+        st.warning(
+            "Coleções com silver na gold, mas sem gold_turma (fora do placar): "
+            + ", ".join(rotulos[g] for g in sem_turma) + "."
+        )
+
+    carteira = st.selectbox(
+        "Carteira da menor perda máxima", list(CARTEIRAS), index=CARTEIRAS.index("cesta_raras"), key="carteira_perda"
+    )
+    placar = placar_turma(gold_turma, carteira)
+    resumo = placar["resumo"]
+
+    dri = resumo[resumo["group_id"] == GROUP_ID_DRI]
+    if len(dri):
+        p, u = dri["primeiro"].iloc[0], dri["ultimo"].iloc[0]
+        diferentes = resumo[(resumo["primeiro"] != p) | (resumo["ultimo"] != u)]
+        if len(diferentes):
+            st.warning(
+                f"Coleções com período diferente da DRI ({p:%d/%m} a {u:%d/%m}); o retorno é o do último dia de "
+                "cada uma: " + ", ".join(
+                    f"{rotulos[int(r.group_id)]} ({r.primeiro:%d/%m} a {r.ultimo:%d/%m})" for r in diferentes.itertuples()
+                ) + "."
+            )
+
+    (a, n_a), (b, n_b) = placar["selado_cdi"], placar["cesta_dolar"]
+    menor = ", ".join(rotulos[g] for g in placar["menor_perda"]) or "—"
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Selado acima da cdi", f"{a} de {n_a}")
+    c2.metric("Cesta_raras acima da dolar", f"{b} de {n_b}")
+    c3.metric(f"Menor perda máxima ({carteira})", menor)
+    st.caption(
+        f"Menor perda máxima da carteira {carteira}: {formatar_percentual(placar['valor_menor_perda'])}. "
+        "Empate não conta como superou."
+    )
+
+    sim_nao = {True: "sim", False: "não"}
+    tabela = pd.DataFrame({
+        "Coleção": resumo["group_id"].map(rotulos),
+        "Período": [f"{r.primeiro:%d/%m} a {r.ultimo:%d/%m}" for r in resumo.itertuples()],
+        **{f"Retorno {c}": resumo[f"retorno_{c}"].map(formatar_percentual) for c in CARTEIRAS},
+        "Selado acima da cdi": resumo["selado_superou_cdi"].map(lambda v: "—" if v is None else sim_nao[v]),
+        "Cesta_raras acima da dolar": resumo["cesta_superou_dolar"].map(lambda v: "—" if v is None else sim_nao[v]),
+        **{f"Perda máxima {c}": resumo[f"perda_{c}"].map(formatar_percentual) for c in CARTEIRAS},
+    })
+    st.dataframe(tabela, hide_index=True, width="stretch")
+
+
 # ---------------------------------------------------------------- página
 
 
@@ -663,6 +1078,16 @@ def main() -> None:
     except Exception as erro:  # mensagem sem credenciais (RNF-08)
         st.error(f"Não foi possível ler a gold: {type(erro).__name__}. Rode `make gold` e confira o `.env`.")
         st.stop()
+
+    gold = dict(gold)
+    carteiras = {t: gold.pop(t) for t in TABELAS_CARTEIRA if t in gold}
+    turma, erro_turma = None, None
+    fonte_turma = fonte_gold_turma()
+    if fonte_turma is not None:
+        try:
+            turma = carregar_gold_turma(fonte_turma)
+        except Exception as erro:  # mensagem sem credenciais (RNF-08)
+            erro_turma = type(erro).__name__
 
     fato, dim_produto = gold["fato_preco_diario"], gold["dim_produto"]
     dim_colecao = gold["dim_colecao"]
@@ -692,6 +1117,10 @@ def main() -> None:
             secao_p4(con, rotulos, so_dri)
         with abas[5]:
             secao_p5(con, moeda, minimo_p5, rotulos, so_dri)
+        with abas[6]:
+            secao_carteiras(carteiras, dim_produto)
+        with abas[7]:
+            secao_placar(turma, erro_turma, fato, dim_colecao)
     finally:
         con.close()
 

@@ -1,0 +1,19 @@
+$ .venv/bin/python -m pytest tests/unidade/test_painel_carteiras.py -v
+tests/unidade/test_painel_carteiras.py::test_rede_continua_bloqueada_neste_modulo PASSED [  7%]
+tests/unidade/test_painel_carteiras.py::test_abas_carteiras_e_placar_renderizam PASSED [ 14%]
+tests/unidade/test_painel_carteiras.py::test_grafico_com_referencia_em_1000_e_dias_marcados PASSED [ 21%]
+tests/unidade/test_painel_carteiras.py::test_seletor_sem_taxa_troca_o_grafico_e_a_tabela PASSED [ 28%]
+tests/unidade/test_painel_carteiras.py::test_metricas_com_e_sem_taxa_lado_a_lado PASSED [ 35%]
+tests/unidade/test_painel_carteiras.py::test_formatar_pp_sem_menos_zero PASSED [ 42%]
+tests/unidade/test_painel_carteiras.py::test_composicao_selado_com_zero_unidades_e_tudo_em_caixa PASSED [ 50%]
+tests/unidade/test_painel_carteiras.py::test_composicao_cesta_raras_e_propria PASSED [ 57%]
+tests/unidade/test_painel_carteiras.py::test_propria_com_regra_pendente_vira_aviso_sem_quebrar PASSED [ 64%]
+tests/unidade/test_painel_carteiras.py::test_placar_com_tres_colecoes PASSED [ 71%]
+tests/unidade/test_painel_carteiras.py::test_placar_seletor_da_perda_maxima PASSED [ 78%]
+tests/unidade/test_painel_carteiras.py::test_placar_so_com_a_dri_avisa PASSED [ 85%]
+tests/unidade/test_painel_carteiras.py::test_placar_funcao_pura_empate_e_denominador PASSED [ 92%]
+tests/unidade/test_painel_carteiras.py::test_painel_nao_grava_nada PASSED [100%]
+============================= 14 passed in 15.42s ==============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+377 passed in 41.90s
