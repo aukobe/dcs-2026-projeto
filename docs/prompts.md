@@ -55,6 +55,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-14 | T-46 | "ajuste visual após conferência com dados reais" | três ajustes em `dashboard/app.py` pedidos pelo autor após o `make painel`: 1) P3 com o eixo y sem começar em 0 (`scale zero=False`), para as variações em torno de 100 ficarem visíveis; 2) gráficos de linha com um rótulo por dia no eixo x, sem datas repetidas (`eixo_data`: ticks nos próprios dias dos dados, `utc`, `labelOverlap`; antes, com dois dias, o Vega punha ticks a cada 12 h e repetia 12/11); 3) seletor de item da P5 só com os itens do gráfico (volatilidade não nula), padrão no de maior preço entre eles. Testes novos em `tests/unidade/test_painel_perguntas.py` (eixo y da P3, `eixo_data` com 12/11 e 13/11 repetido, um tick por dia em cada gráfico de linha, seletor da P5 sem a carta cara com lacunas, acrescentada à fixture). `pytest tests/unidade/test_painel_perguntas.py tests/unidade/test_painel_base.py -v`: 27 passed na 1ª execução; saída acrescentada a `docs/evidencias/T-46_painel_perguntas.txt`. |
 | 2026-11-14 | T-46 | "ajuste visual após conferência com dados reais" | três ajustes em `dashboard/app.py`: 1) P2 com o eixo y sem começar em 0 (`scale zero=False`), como na P3; 2) conferido no RF-16 e no SQL (`avg(preco)` da cesta fixa): o índice dos selados é a média dos preços da cesta fixa, que dá o mesmo índice da soma (n constante), não a média dos índices dos itens; as duas séries passam a "Selados (cesta fixa)" e "Double Rare em diante (cesta fixa)", a legenda explica a equivalência e fica abaixo do gráfico com `labelLimit=0`, sem corte; 3) P4 com os rótulos das coleções na horizontal (`labelAngle=0`). Testes novos em `tests/unidade/test_painel_perguntas.py` (eixo y e legenda da P2, ângulo do eixo x da P4; rótulos da P2 atualizados). `pytest tests/unidade/test_painel_perguntas.py tests/unidade/test_painel_base.py -v`: 29 passed na 1ª execução; saída acrescentada a `docs/evidencias/T-46_painel_perguntas.txt`. |
 | 2026-11-16 | T-39 | texto completo em [Prompt da T-39 – ADR-005, regra da carteira propria (2026-11-16)](#prompt-da-t-39--adr-005-regra-da-carteira-propria-2026-11-16) | rascunho aprovado; dois pontos fechados pelo autor antes do commit (dia de montagem pela definição de primeiro dia da spec; empate do selado por `product_id` e depois `acabamento`); ADR salvo, T-39 marcada como [x]; pendência sobre o primeiro dia em `perguntas.py` anotada para a T-55 e a T-56 |
+| 2026-11-16 | T-40 | texto completo em [Prompt da T-40 – ADR-006, fallback do selado (2026-11-16)](#prompt-da-t-40--adr-006-fallback-do-selado-2026-11-16) | rascunho aprovado sem alterações, mantendo os dois acréscimos do agente (alternativa "buscar o preço do booster box em outro dia" e risco "regra do nome pegar outro produto", tratado como pendência); ADR salvo em `docs/adr/ADR-006-fallback-selado.md`, T-40 marcada como [x] |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -900,3 +901,48 @@ Não calcule a composição, não consulte preços, não acesse o RustFS nem o M
 Resultado: rascunho apresentado e aprovado pelo autor. Gravado `docs/adr/ADR-005-carteira-propria.md` e marcada a T-39 em `specs/tasks.md`. RF citado: RF-23 (o RF-24 é referência da avaliação). Os dois pontos levantados pelo agente foram fechados pelo autor antes do commit: 1) o dia de montagem passou a ser "o primeiro dia, conforme as Definições da spec (menor `data` com bruto do TCGCSV da coleção)", o mesmo das carteiras selado e cesta_raras, em vez da menor `data` do fato de preços; 2) o empate da parte selada passou a ser pelo menor `product_id` e depois por `acabamento` em ordem alfabética, com o cenário correspondente na tabela de requisitos do ADR.
 
 Pendência para a autoauditoria (T-56) e para o registro de pendências (T-55): `src/tcg/gold/perguntas.py` (linhas 270 a 274) usa como primeiro dia da coleção a menor `data` com `market_price` não nulo, diferente da definição da spec (menor `data` com bruto do TCGCSV). Os dois só divergem se o primeiro dia tiver todos os preços nulos. Nada foi corrigido nesta tarefa. Nenhuma composição foi calculada, nenhum preço foi consultado e nenhum acesso ao data lake ou ao MinIO foi feito.
+
+## Prompt da T-40 – ADR-006, fallback do selado (2026-11-16)
+
+```text
+[C] Personagem
+Você é um arquiteto de dados que registra decisões de forma verificável. Você escreve o ADR a partir da decisão do autor, sem inventar regras e sem calcular resultados.
+
+[R] Pedido
+Execute a tarefa T-40 de specs/tasks.md: escreva docs/adr/ADR-006-fallback-selado.md registrando a decisão do autor sobre o selado da carteira selado (abaixo). Siga esta ordem:
+1. mostre o rascunho completo do ADR;
+2. espere minha confirmação;
+3. grave o arquivo, marque T-40 como [x] em specs/tasks.md, acrescente a linha em docs/prompts.md (entrada detalhada e linha na tabela de índice) e proponha a mensagem de commit no formato docs(T-40): descrição [RF-yy].
+
+Decisão do autor:
+- Selado principal: o booster box da coleção, identificado pela regra validada no T-13 e registrada no RF-23 (nome contém "Booster Box", não contém "Case" nem "Half"). Na DRI é o productId 624679.
+- Fallback: só se o booster box não tiver market_price no primeiro dia (Definições da spec). Nesse caso, usa-se o produto tipo_produto = 'selado' de maior market_price com preço no primeiro dia; empate por menor product_id, depois acabamento em ordem alfabética.
+- Orçamento e unidades: a regra é seguida literalmente. Compra-se o máximo de unidades inteiras que caibam em R$ 1.000,00 ao preço de compra do primeiro dia; se o selado custar mais que o orçamento, a carteira fica com zero unidades e todo o valor fica em caixa rendendo CDI de dia útil. O fallback não é acionado por preço acima do orçamento, só por ausência de preço.
+
+[E] Exemplos
+Use a estrutura dos ADRs já existentes em docs/adr/ (por exemplo ADR-005): Status, Contexto e forças, Requisitos e cenários, Alternativas, Decisão e táticas, Consequências positivas, Consequências negativas, Riscos, Evidência necessária, Condição de revisão.
+
+[A] Ajustes
+- Escreva como decisão do autor, com justificativa própria; não cite material de aula.
+- Justificativas a registrar: seguir a regra literal mantém a carteira selado comparável entre as coleções da turma no placar; acionar o fallback por preço alto mudaria o significado da carteira (deixaria de ser booster box) e seria uma escolha diferente para cada coleção.
+- Alternativa descartada a registrar: usar o fallback quando o booster box não cabe no orçamento, pelo motivo acima.
+- Consequência negativa a registrar: na DRI, com o booster box acima de R$ 1.000,00 no primeiro dia, a carteira selado tende a ficar com zero unidades e se comportar como a carteira cdi; a exposição a selado do autor fica na carteira propria (ADR-005). Escreva "tende a" e não afirme o preço exato, porque não se calcula nada nesta tarefa.
+- Não calcule a composição, não consulte preços e não acesse o RustFS nem o MinIO nesta tarefa.
+- Se a decisão contradisser specs/spec.md ou AGENTS.md, pare e pergunte.
+- Não faça git commit nem git push. Responda em português do Brasil.
+
+[T] Tipo de saída
+O ADR, specs/tasks.md e docs/prompts.md atualizados, e um resumo de até cinco linhas com a mensagem de commit proposta.
+
+[E] Extras
+Leia antes: AGENTS.md, specs/spec.md, specs/plan.md, specs/tasks.md, docs/adr/ADR-005-carteira-propria.md e os demais ADRs em docs/adr/.
+Pare ao final da tarefa.
+```
+
+Resposta de aprovação do autor:
+
+```text
+Aprovado, mantendo os dois acréscimos. Pode gravar o ADR, marcar a T-40 em specs/tasks.md, registrar em docs/prompts.md (entrada e linha na tabela de índice) e propor a mensagem de commit. Não faça commit.
+```
+
+Resultado: o agente conferiu que a decisão não contradiz a spec nem o AGENTS.md (o RF-23 já prevê "o selado de maior preço com preço (escolha em ADR)", unidades inteiras e sobra em caixa; como o preço de compra é market_price × PTAX do mesmo dia, ordenar por um ou pelo outro dá a mesma ordem). Rascunho apresentado e aprovado sem alterações. Gravado `docs/adr/ADR-006-fallback-selado.md` e marcada a T-40 em `specs/tasks.md`. RF citado: RF-23 (RF-24 e RF-26 como referência da avaliação e do placar). O ADR cita a evidência do T-13: regra do booster box com exclusão de "Half", booster box com market_price no bruto de 2026-11-03 e 25 de 25 selados com preço próprio. Acréscimos do agente, mantidos pelo autor: a alternativa "buscar o preço do booster box em outro dia" (descartada por informação do futuro e por não preencher lacunas) e o risco "regra do nome pegar outro produto numa coleta futura" (tratado como pendência). Nenhum preço em reais foi escrito, nenhuma composição foi calculada, nenhum preço foi consultado e nenhum acesso ao data lake ou ao MinIO foi feito.
