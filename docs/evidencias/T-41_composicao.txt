@@ -1,0 +1,31 @@
+$ .venv/bin/python -m pytest tests/unidade/test_composicao.py -v
+tests/unidade/test_composicao.py::test_composicao_identica_com_primeiro_dia_e_com_dez_dias_a_mais[True] PASSED [  4%]
+tests/unidade/test_composicao.py::test_composicao_identica_com_primeiro_dia_e_com_dez_dias_a_mais[False] PASSED [  8%]
+tests/unidade/test_composicao.py::test_cinco_carteiras_unidades_inteiras_e_sobra_em_caixa PASSED [ 12%]
+tests/unidade/test_composicao.py::test_unidades_exatas_sem_erro_de_ponto_flutuante PASSED [ 16%]
+tests/unidade/test_composicao.py::test_cesta_raras_empate_na_decima_entra_menor_product_id PASSED [ 20%]
+tests/unidade/test_composicao.py::test_cesta_raras_mesmo_product_id_empatado_entra_acabamento_alfabetico PASSED [ 25%]
+tests/unidade/test_composicao.py::test_cesta_raras_com_menos_de_dez_itens_valor_restante_em_caixa PASSED [ 29%]
+tests/unidade/test_composicao.py::test_selado_booster_box_com_preco_mesmo_com_selado_mais_caro PASSED [ 33%]
+tests/unidade/test_composicao.py::test_selado_booster_box_sem_preco_aciona_fallback[preco_nulo] PASSED [ 37%]
+tests/unidade/test_composicao.py::test_selado_booster_box_sem_preco_aciona_fallback[ausente_no_dia] PASSED [ 41%]
+tests/unidade/test_composicao.py::test_selado_fallback_empate_por_product_id_e_depois_acabamento PASSED [ 45%]
+tests/unidade/test_composicao.py::test_selado_booster_box_acima_do_orcamento_zero_unidades_sem_fallback PASSED [ 50%]
+tests/unidade/test_composicao.py::test_selado_case_e_half_nao_sao_booster_box PASSED [ 54%]
+tests/unidade/test_composicao.py::test_selado_dois_product_id_na_regra_do_nome_e_pendencia PASSED [ 58%]
+tests/unidade/test_composicao.py::test_selado_mesmo_product_id_com_dois_acabamentos_escolhe_alfabetico PASSED [ 62%]
+tests/unidade/test_composicao.py::test_selado_sem_nenhum_selado_com_preco_fica_todo_em_caixa PASSED [ 66%]
+tests/unidade/test_composicao.py::test_propria_empate_na_quinta_illustration_rare_por_product_id PASSED [ 70%]
+tests/unidade/test_composicao.py::test_propria_empate_na_quinta_illustration_rare_por_acabamento PASSED [ 75%]
+tests/unidade/test_composicao.py::test_propria_selados_empatados_por_product_id_e_depois_acabamento PASSED [ 79%]
+tests/unidade/test_composicao.py::test_propria_nenhum_selado_ate_500_deixa_500_em_caixa PASSED [ 83%]
+tests/unidade/test_composicao.py::test_propria_so_tres_illustration_rare_deixa_200_em_caixa PASSED [ 87%]
+tests/unidade/test_composicao.py::test_propria_sem_regra_fica_regra_pendente PASSED [ 91%]
+tests/unidade/test_composicao.py::test_sem_ptax_aplicada_no_primeiro_dia_e_erro PASSED [ 95%]
+tests/unidade/test_composicao.py::test_registrar_composicao_no_duckdb PASSED [100%]
+============================== 24 passed in 1.51s ==============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+........................................................................ [ 85%]
+..................................................                       [100%]
+338 passed in 33.63s
