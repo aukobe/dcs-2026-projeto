@@ -1,0 +1,24 @@
+$ .venv/bin/python -m pytest tests/unidade/test_cobertura.py -v
+tests/unidade/test_cobertura.py::test_le_so_a_tabela_da_secao_dias_sem_coleta PASSED [  6%]
+tests/unidade/test_cobertura.py::test_tabela_vazia_do_readme_atual_nao_tem_registros PASSED [ 12%]
+tests/unidade/test_cobertura.py::test_readme_sem_a_secao_e_erro PASSED   [ 18%]
+tests/unidade/test_cobertura.py::test_periodo_completo_termina_com_sucesso PASSED [ 25%]
+tests/unidade/test_cobertura.py::test_dia_sem_arquivo_e_sem_linha_falha_e_e_listado PASSED [ 31%]
+tests/unidade/test_cobertura.py::test_dia_registrado_com_motivo_conta_como_coberto PASSED [ 37%]
+tests/unidade/test_cobertura.py::test_linha_sem_motivo_nao_conta PASSED  [ 43%]
+tests/unidade/test_cobertura.py::test_dia_parcial_sem_linha_lista_o_arquivo_que_falta PASSED [ 50%]
+tests/unidade/test_cobertura.py::test_periodo_definido_so_pelo_tcgcsv PASSED [ 56%]
+tests/unidade/test_cobertura.py::test_registro_fora_do_periodo_e_outro_group_id_viram_aviso PASSED [ 62%]
+tests/unidade/test_cobertura.py::test_bruto_sem_tcgcsv_e_erro PASSED     [ 68%]
+tests/unidade/test_cobertura.py::test_formato_do_relatorio PASSED        [ 75%]
+tests/unidade/test_cobertura.py::test_ponta_a_ponta_pela_branch_dados_raw PASSED [ 81%]
+tests/unidade/test_cobertura.py::test_ponta_a_ponta_com_data_faltante_sai_com_1 PASSED [ 87%]
+tests/unidade/test_cobertura.py::test_branch_sem_bruto_do_tcgcsv_sai_com_2 PASSED [ 93%]
+tests/unidade/test_cobertura.py::test_falha_do_git_sai_com_2 PASSED      [100%]
+============================== 16 passed in 0.66s ==============================
+
+$ .venv/bin/python -m pytest tests/unidade -q
+402 passed in 46.14s
+
+$ make -n cobertura
+.venv/bin/python -m tcg.cobertura.verificador

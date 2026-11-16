@@ -2,7 +2,7 @@ PYTHON ?= .venv/bin/python
 # python3.13 do PATH; se não houver, o caminho fixo do Codespace
 PYTHON313 ?= $(shell command -v python3.13 2>/dev/null || echo /usr/local/python/3.13.8/bin/python3.13)
 
-.PHONY: setup test up sync silver gold reprocessar painel
+.PHONY: setup test up sync silver gold reprocessar painel cobertura
 
 setup:
 	@test -x "$(PYTHON313)" || { echo "python3.13 não encontrado no PATH nem em /usr/local/python/3.13.8/bin" >&2; exit 1; }
@@ -48,3 +48,9 @@ reprocessar:
 painel:
 	@test -f .env || { echo ".env ausente: copie .env.example para .env e preencha" >&2; exit 2; }
 	@set -a && . ./.env && set +a && $(PYTHON) -m streamlit run dashboard/app.py
+
+# Datas do primeiro ao último dia × quatro arquivos na Branch dados-raw (git fetch, sem checkout)
+# e tabela "Dias sem coleta" do README (RF-27). Não usa o .env nem acessa o data lake.
+# Saída 0 = coberto; 1 = datas faltantes listadas; 2 = falha do git ou entrada inválida.
+cobertura:
+	@$(PYTHON) -m tcg.cobertura.verificador
