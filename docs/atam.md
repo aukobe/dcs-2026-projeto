@@ -137,7 +137,7 @@ Situação: **atendido**. Teste: `tests/unidade/test_decomposicao.py::test_ident
 | Resposta | A chave é recusada antes da chamada ao SDK. O Sincronizador valida a chave e faz `stat_object` antes do `put_object` (ADR-001, ADR-004, ADR-008). |
 | Medida | Nenhuma chave fora dos prefixos com `group_id=24269` é criada, alterada ou apagada, e nenhum objeto do bruto muda de hash. |
 
-Situação: **atendido nos testes**. Testes: `tests/unidade/test_guarda_prefixo.py::test_escrita_recusada_antes_do_sdk` e `test_exclusao_recusada_antes_do_sdk` (`docs/evidencias/T-23_guarda_prefixo.txt`), `tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk` e `tests/integracao/test_reprocessar.py::test_raw_e_terceiros_mantem_o_hash` (`docs/evidencias/T-33_reprocessar.txt`, `docs/evidencias/T-34_pipeline.txt`). No lake da turma, as sincronizações registram as chaves existentes como recusadas, por exemplo 0/52/0 em 16/11 (`docs/evidencias/T-52_agendador.md`).
+Situação: **atendido nos testes**. Testes: `tests/unidade/test_guarda_prefixo.py::test_escrita_recusada_antes_do_sdk` e `test_exclusao_recusada_antes_do_sdk` (`docs/evidencias/T-23_guarda_prefixo.txt`), `tests/unidade/test_sincronizador.py::test_chave_fora_do_escopo_nunca_chega_ao_sdk` e `tests/integracao/test_reprocessar_integracao.py::test_raw_e_terceiros_mantem_o_hash` (`docs/evidencias/T-33_reprocessar.txt`, `docs/evidencias/T-34_pipeline.txt`). No lake da turma, as sincronizações registram as chaves existentes como recusadas, por exemplo 0/52/0 em 16/11 (`docs/evidencias/T-52_agendador.md`).
 
 ### C-06: reprocessamento idempotente (RNF-04)
 
@@ -150,7 +150,7 @@ Situação: **atendido nos testes**. Testes: `tests/unidade/test_guarda_prefixo.
 | Resposta | Apaga só os prefixos derivados da DRI e reconstrói tudo a partir do bruto (ADR-004). |
 | Medida | Mesmas chaves, contagens e conteúdo nas duas execuções, sem chave de grão duplicada. |
 
-Situação: **atendido nos testes**. Testes: `tests/integracao/test_reprocessar.py::test_duas_execucoes_mesmas_chaves_contagens_e_conteudo` e `test_nenhuma_chave_de_grao_duplicada` (`docs/evidencias/T-33_reprocessar.txt`). O comando é executado só pelo autor (`AGENTS.md`).
+Situação: **atendido nos testes**. Testes: `tests/integracao/test_reprocessar_integracao.py::test_duas_execucoes_mesmas_chaves_contagens_e_conteudo` e `test_nenhuma_chave_de_grao_duplicada` (`docs/evidencias/T-33_reprocessar.txt`). O comando é executado só pelo autor (`AGENTS.md`).
 
 ### C-07: testes sem rede (RNF-05, RNF-06)
 
@@ -326,4 +326,4 @@ Situação: **atendido para a escrita isolada; comparação limitada**.
 
 ## 11. Rastreabilidade
 
-A ligação de cada RF e RNF com tarefa, teste e commit fica em [docs/rastreabilidade.md](rastreabilidade.md), que será criada na T-54.
+A ligação de cada RF e RNF com tarefa, teste e commit fica em [docs/rastreabilidade.md](rastreabilidade.md), criada na T-54.

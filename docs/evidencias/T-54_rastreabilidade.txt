@@ -1,0 +1,33 @@
+T-54 – Matriz de rastreabilidade (docs/rastreabilidade.md) – verificação executada pelo agente em 2026-11-16T23:55Z
+
+$ for r in $(seq -f "RF-%02g" 1 28) $(seq -f "RNF-%02g" 1 13); do grep -q "$r" docs/rastreabilidade.md || echo "falta $r"; done; echo "código de saída: $?"
+código de saída: 0
+(nenhuma linha "falta")
+
+$ grep -cE "^\| (RF|RNF)-[0-9]+ " docs/rastreabilidade.md   # linhas da matriz
+41
+
+$ grep -cE "^\| (RF|RNF)-[0-9]+ .*\| atendido \|" docs/rastreabilidade.md; grep -cE "^\| (RF|RNF)-[0-9]+ .*\| parcial \|" docs/rastreabilidade.md
+40
+1
+
+$ .venv/bin/python -m pytest --collect-only -q | tail -1
+463 tests collected in 1.39s
+
+## Revisão por amostra: três linhas "atendido" sorteadas com random.seed(54)
+$ python3 -c "import re,random; rows=[l for l in open('docs/rastreabilidade.md') if re.match(r'\| (RF|RNF)-\d+ ',l)]; at=[re.match(r'\| ((?:RF|RNF)-\d+)',l).group(1) for l in rows if '| atendido |' in l]; random.seed(54); print(random.sample(at,3))"
+['RF-09', 'RNF-01', 'RNF-08']
+
+$ .venv/bin/python -m pytest -v tests/unidade/test_modelos.py::test_tipo_produto_rf09_selado_carta_e_code_card tests/integracao/test_coleta_silver.py::test_contagens_iguais_as_do_t13 tests/unidade/test_estrela.py::test_nunca_usa_ptax_posterior tests/unidade/test_fato_cambio.py::test_feriado_nunca_usa_ptax_posterior tests/unidade/test_workflow.py::test_secrets_so_no_env_do_passo_de_sincronizacao tests/unidade/test_workflow.py::test_secrets_nunca_em_run_echo_ou_set_x tests/unidade/test_log.py::test_credenciais_nao_aparecem_no_log tests/unidade/test_config.py::test_config_minio_lida_do_ambiente
+collecting ... collected 8 items
+
+tests/unidade/test_modelos.py::test_tipo_produto_rf09_selado_carta_e_code_card PASSED [ 12%]
+tests/integracao/test_coleta_silver.py::test_contagens_iguais_as_do_t13 PASSED [ 25%]
+tests/unidade/test_estrela.py::test_nunca_usa_ptax_posterior PASSED      [ 37%]
+tests/unidade/test_fato_cambio.py::test_feriado_nunca_usa_ptax_posterior PASSED [ 50%]
+tests/unidade/test_workflow.py::test_secrets_so_no_env_do_passo_de_sincronizacao PASSED [ 62%]
+tests/unidade/test_workflow.py::test_secrets_nunca_em_run_echo_ou_set_x PASSED [ 75%]
+tests/unidade/test_log.py::test_credenciais_nao_aparecem_no_log PASSED   [ 87%]
+tests/unidade/test_config.py::test_config_minio_lida_do_ambiente PASSED  [100%]
+
+============================== 8 passed in 2.07s ===============================
