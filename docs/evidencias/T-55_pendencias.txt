@@ -1,0 +1,34 @@
+T-55 – Registro de pendências (docs/pendencias_aula08.md) – verificação executada pelo agente em 2026-11-17T00:05Z
+
+$ test -s docs/pendencias_aula08.md; echo "código de saída: $?"
+código de saída: 0
+
+$ grep -cE "^\| P-[0-9]+ " docs/pendencias_aula08.md   # pendências na tabela
+15
+
+# critério: cada pendência tem descrição, origem e encaminhamento (células não vazias), e impacto, responsável, prazo e estado válidos
+$ python3 (confere as 9 colunas de cada linha P-xx)
+P-01: impacto=limitador responsável=autor prazo=12/12/2026 estado=aberta -> ok
+P-02: impacto=entrega responsável=autor prazo=05/12/2026 estado=aberta -> ok
+P-04: impacto=entrega responsável=autor prazo=12/12/2026 estado=aberta -> ok
+P-03: impacto=funcional responsável=agente prazo=05/12/2026 estado=aberta -> ok
+P-05: impacto=funcional responsável=autor prazo=05/12/2026 estado=aberta -> ok
+P-06: impacto=funcional responsável=agente prazo=05/12/2026 estado=aberta -> ok
+P-07: impacto=funcional responsável=agente prazo=05/12/2026 estado=aberta -> ok
+P-08: impacto=funcional responsável=agente prazo=05/12/2026 estado=aberta -> ok
+P-09: impacto=funcional responsável=agente prazo=05/12/2026 estado=aberta -> ok
+P-10: impacto=funcional responsável=autor prazo=05/12/2026 estado=aberta -> ok
+P-11: impacto=documentação responsável=autor prazo=12/12/2026 estado=aberta -> ok
+P-12: impacto=documentação responsável=autor prazo=12/12/2026 estado=aberta -> ok
+P-13: impacto=documentação responsável=autor prazo=12/12/2026 estado=aceita -> ok
+P-14: impacto=cosmético responsável=agente prazo=05/12/2026 estado=aberta -> ok
+P-15: impacto=cosmético responsável=agente prazo=05/12/2026 estado=aberta -> ok
+ordem por impacto (limitador, entrega, funcional, documentação, cosmético): ok
+resultado: ok
+
+$ grep -c "^[0-9]\. \*\*" docs/pendencias_aula08.md   # perguntas para a mentoria
+4
+
+$ git status --short
+?? docs/evidencias/T-55_pendencias.txt
+?? docs/pendencias_aula08.md

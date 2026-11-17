@@ -71,6 +71,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-16 | T-52 | "registro da T-52 a partir dos dados coletados pelo autor" (detalhes em [Registro da T-52 – Agendador e requisições (2026-11-16)](#registro-da-t-52--agendador-e-requisições-2026-11-16)) | dados coletados pelo autor por volta das 23h30 UTC (`gh run list`, `gh run view --log` das 29 execuções, `make cobertura`); agente só analisou os arquivos, sem executar `gh`, `git fetch` nem `make` e sem ler o `.env`; logs sem credencial (secrets como `***`); 29 execuções (25 schedule, 4 workflow_dispatch; 25 success, 4 failure); atraso das agendadas: média 6h14min47s, máximo 10h15min30s; 26 requisições ao TCGCSV, no máximo 4 num dia civil UTC e 2 por data de referência, contra o limite de 10000; 03/11 a 15/11 com bruto, coerente com `make cobertura` e a tabela "Dias sem coleta" vazia; 04/11 recuperado na T-57; 16/11 ainda no ciclo; agendamento ativo (última agendada 43905874560, 2026-11-16T16:17Z); evidência em `docs/evidencias/T-52_agendador.md`; T-52 marcada como [x]; ajuste após revisão: `make sync` do autor em 15/11, antes das 14h04 UTC, sem saída guardada, e `[[x]` da T-51 corrigido em `specs/tasks.md` |
 | 2026-11-16 | T-53 | texto completo em [Prompt da T-53 – Avaliação ATAM (2026-11-16)](#prompt-da-t-53--avaliação-atam-2026-11-16) | rascunho mostrado antes de gravar; aprovado com três ajustes do autor: 1) evidência nova `docs/evidencias/T-53_observacoes_painel.md` com as observações do autor no `make painel` de 16/11 (carteiras, composição, placar e linhas da gold por coleção), usada em S-01, C-13 e RS-03, que saíram das pendências; 2) RS-05 reescrito: o placar usa comparação estrita, e a selado da DRI aparece como "não" acima da cdi por empate; 3) evidência da verificação em `docs/evidencias/T-53_atam.txt`; `docs/atam.md` com 13 cenários em seis partes, cada RNF em ao menos um cenário; verificação: 42 linhas com "RNF-", nenhuma evidência citada faltando; T-53 marcada como [x] |
 | 2026-11-16 | T-54 | texto completo em [Prompt da T-54 – Matriz de rastreabilidade (2026-11-16)](#prompt-da-t-54--matriz-de-rastreabilidade-2026-11-16) | matriz com 41 linhas (40 atendidos, 1 parcial: RNF-13); revisão do autor: amostra de três linhas "atendido" com semente 54 (RF-09, RNF-01, RNF-08; 8 testes, 8 passed); colunas Decisão e Razão mantidas, com desvio registrado em relação ao formato literal do prompt 11.2; nome do teste corrigido em `docs/atam.md`; nota sobre `scripts/hipoteses_bruto.py`, `tests/unidade/test_hipoteses_bruto.py` e os `__init__.py`; T-54 marcada como [x]; evidência em `docs/evidencias/T-54_rastreabilidade.txt` |
+| 2026-11-17 | T-55 | texto completo em [Prompt da T-55 – Registro de pendências (2026-11-17)](#prompt-da-t-55--registro-de-pendências-2026-11-17) | rascunho mostrado antes de gravar; aprovado com ajustes do autor: evidência `docs/evidencias/T-55_pendencias.txt`; categoria `entrega` criada para P-02 e P-04, só a P-01 como `limitador`; P-03 passou a `funcional` (as ações já rodam forçadas no Node.js 24); "a ASC (24541)" na pergunta 3; regra de tarefa nova antes de qualquer código em "Como ler"; `docs/pendencias_aula08.md` com 15 pendências (1 limitador, 2 entrega, 7 funcional, 3 documentação, 2 cosmético) e 4 perguntas para a mentoria; verificação `test -s` com código 0 e conferência das colunas de cada linha sem falta |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -1196,3 +1197,40 @@ Revisão do autor:
    - Seção 11 do `docs/atam.md`: "que será criada na T-54" passou a "criada na T-54", sem outra alteração.
 
 Resultado: a verificação da T-54 não imprimiu nenhuma linha "falta" (código de saída 0); 41 linhas na matriz (40 atendidos e 1 parcial); 463 testes coletados. Nenhum código, teste, `specs/spec.md` ou `specs/plan.md` alterado; nenhum acesso do agente ao `.env`, ao data lake, ao MinIO ou à rede; nenhum commit.
+
+## Prompt da T-55 – Registro de pendências (2026-11-17)
+
+```text
+[C] Personagem
+Você é um engenheiro de dados que organiza as pendências do projeto de forma verificável, sem resolver nenhuma delas.
+
+[R] Pedido
+Execute a tarefa T-55 de specs/tasks.md: crie docs/pendencias_aula08.md. Mostre o rascunho, espere minha confirmação e depois grave, rode a verificação da tarefa, salve a evidência em docs/evidencias/ com o nome indicado em specs/tasks.md, marque a T-55 como [x], registre em docs/prompts.md e proponha a mensagem de commit docs(T-55): descrição [RF-yy ou RNF-yy].
+
+[E] Exemplos
+Tabela com as colunas #, Pendência, Origem, Requisito, Impacto, Responsável, Prazo e Estado (exemplo: P-01, trocar "MinIO" por "data lake" nas mensagens de log, revisão da T-58, cosmético, agente, 05/12/2026, aberta).
+
+[A] Ajustes
+- Reúna as pendências já registradas em docs/atam.md (seção de pendências e riscos), docs/rastreabilidade.md (linhas parcial) e docs/prompts.md, sem inventar outras.
+- Inclua também as que o autor registrou na conversa: divergência de "primeiro dia" em src/tcg/gold/perguntas.py; "MinIO" por "data lake" nos logs e nome do logger; passo do workflow com a palavra "turma"; actions/checkout v5 e actions/setup-python v6; credenciais de teste em tracebacks do pytest; coleção dos itens fora do gráfico na P5 e aviso de um só dia comum na P3; make sync, silver, gold e cobertura antes da mentoria (05/12) e da entrega (12/12), com prints e conclusões atualizados; backup do prefixo raw da DRI fora do repositório; commit de fechamento com tag entrega-final e envio do formulário até 12/12/2026, 23h59.
+- Classifique o impacto (limitador, funcional, documentação, cosmético) e ordene: primeiro o que pode acionar limitador.
+- Prazo: 05/12/2026 ou 12/12/2026. Responsável: autor ou agente. O que não couber até 12/12 deve dizer que vira "parcial" ou "não atendido" na matriz, com a razão.
+- Escreva como registro do autor, sem citar material de aula. Não altere nenhum outro arquivo além dos listados. Não leia o .env, não acesse o RustFS e não faça commit.
+
+[T] Tipo de saída
+docs/pendencias_aula08.md com a tabela e uma seção "Perguntas para a mentoria", a evidência, specs/tasks.md e docs/prompts.md atualizados, e um resumo de até cinco linhas.
+```
+
+Resultado do rascunho: 15 pendências, com a coluna Encaminhamento acrescentada ao exemplo, porque o critério da T-55 pede descrição, origem e encaminhamento. O agente apontou que a linha da T-55 em `specs/tasks.md` não indica nome de evidência e propôs `T-55_pendencias.txt`. Para as pendências que não mudam o estado de nenhum requisito, o encaminhamento diz isso com a razão, em vez de forçar "parcial" ou "não atendido".
+
+Ajustes do autor antes de gravar:
+1. Evidência em `docs/evidencias/T-55_pendencias.txt`.
+2. `limitador` reservado ao que pode acionar um limitador da avaliação ou impedir a entrega. Só a P-01 ficou assim. Categoria nova `entrega` para P-02 e P-04, e ordem: limitador, entrega, funcional, documentação, cosmético. Seção "Como ler" atualizada.
+3. P-03 passou a `funcional`: o aviso do workflow diz que as ações já rodam forçadas no Node.js 24, então a coleta não para por isso. Encaminhamento ajustado.
+4. Pergunta 3 da mentoria: "a 24541 e a ASC" corrigido para "a ASC (24541)", que é a mesma coleção.
+5. Em "Como ler": toda pendência que muda código (P-03, P-06, P-07, P-08, P-09, P-14, P-15) precisa antes virar tarefa nova em `specs/tasks.md`.
+6. Tratamento dos itens sem mudança de estado na matriz aprovado.
+
+Os IDs P-xx do rascunho foram mantidos, porque o autor se refere a eles nos ajustes. Por isso a P-04 aparece antes da P-03 na tabela.
+
+Resultado: `test -s docs/pendencias_aula08.md` com código de saída 0. 15 linhas P-xx com descrição, encaminhamento e origem preenchidos e impacto, responsável, prazo e estado válidos, em ordem por impacto. 4 perguntas para a mentoria. Saída em `docs/evidencias/T-55_pendencias.txt`. T-55 marcada como [x]. Nenhuma pendência foi resolvida, nenhum código foi alterado e não houve acesso do agente ao `.env`, ao data lake, ao MinIO ou à rede, nem commit.
