@@ -1,9 +1,10 @@
 # Registro de pendências
 
-- **Tarefa:** T-55 de `specs/tasks.md`.
+- **Tarefa:** T-55 de `specs/tasks.md`; P-16 e P-17 acrescentadas na T-56, a partir de `docs/auditoria_final.md`.
 - **Data:** 2026-11-17.
 - **Autor:** registro do autor, redigido com apoio do agente.
-- **Fontes:** `docs/atam.md` (seções 4, 6, 8 e 10), `docs/rastreabilidade.md` (linhas com estado `parcial`), `docs/prompts.md` (pendências anotadas nos registros das tarefas) e pendências anotadas pelo autor em 2026-11-17. Nenhuma pendência foi acrescentada fora dessas fontes.
+- **Fontes:** `docs/atam.md` (seções 4, 6, 8 e 10), `docs/rastreabilidade.md` (linhas com estado `parcial`), `docs/prompts.md` (pendências anotadas nos registros das tarefas) e pendências anotadas pelo autor em 2026-11-17; na T-56, `docs/auditoria_final.md` (lacunas L-08 e L-11, as únicas não registradas antes). Nenhuma pendência foi acrescentada fora dessas fontes.
+- **Contagem:** 17 pendências (P-01 a P-15 da T-55; P-16 e P-17 da T-56): 14 abertas e 3 aceitas (P-13, P-16 e P-17). Por impacto: 1 limitador, 2 entrega, 7 funcional, 4 documentação e 3 cosmético.
 - Nada foi corrigido nesta tarefa. O único arquivo novo é este registro.
 
 ## Como ler
@@ -19,7 +20,7 @@
 - **Pendência que muda código:** P-03, P-06, P-07, P-08, P-09, P-14 e P-15 precisam virar tarefa nova em `specs/tasks.md`, com teste, antes de qualquer alteração. Assim não há código sem especificação prévia. O autor revisa e commita cada tarefa (`AGENTS.md`).
 - **Encaminhamento:** o próximo passo e, depois de "Se não couber até 12/12", o efeito na matriz de `docs/rastreabilidade.md`. Quando a pendência não muda o estado de nenhum requisito, o texto diz isso e explica por quê.
 - **Estado:** `aberta` (a resolver) ou `aceita` (sem correção possível; fica registrada).
-- **IDs:** a numeração P-xx é a do primeiro rascunho e não foi refeita depois da reclassificação. Por isso a P-04 vem antes da P-03 na tabela.
+- **IDs:** a numeração P-xx é a do primeiro rascunho e não foi refeita depois da reclassificação. Por isso a P-04 vem antes da P-03 na tabela. P-16 e P-17 seguem a numeração e entram na faixa do seu impacto: a P-16 depois da P-13 e a P-17 no fim.
 
 ## Pendências
 
@@ -38,8 +39,10 @@
 | P-11 | A janela de 10 dias da PTAX e do CDI ainda é hipótese | Conferir com as coletas de dias seguidos, incluindo um feriado do período, se houver, que nenhum dia útil ficou sem cotação dentro da janela. Atualizar a spec (Perguntas abertas) e `config/parametros.toml`. Se não couber até 12/12: continua como hipótese declarada, e o RF-01 continua `atendido`, como já diz a razão na matriz. | atam.md S-04 e seção 10; spec.md Perguntas abertas; rastreabilidade.md RF-01 | RF-01 | documentação | autor | 12/12/2026 | aberta |
 | P-12 | Os parâmetros de repetição (esperas de 2, 4 e 8 s) ainda são hipótese, porque não houve nenhuma falha transitória real | Não há como provocar uma falha real da fonte: conferir os logs das execuções até 12/12 e registrar se houve repetição. Se não couber até 12/12: continua como hipótese declarada, e o RF-03 continua `atendido`, porque o critério usa servidor simulado. | atam.md seção 10; spec.md Perguntas abertas; rastreabilidade.md RF-03 | RF-03 | documentação | autor | 12/12/2026 | aberta |
 | P-13 | RNF-13 `parcial`: as datas 03/11 e 04/11 foram gravadas por execuções manuais | Não tem correção: essas execuções fazem parte do histórico. Manter `parcial`, com a razão. Na P-04, conferir que nenhuma outra data dependeu de execução manual. Até 12/12: continua `parcial`. A razão é a ressalva de C-01 (03/11 e 04/11 manuais, porque a regra de horário anterior ao ADR-007 recusou as agendadas). | rastreabilidade.md RNF-13; atam.md C-01 e RS-02 | RNF-13 | documentação | autor | 12/12/2026 | aceita |
+| P-16 | O sincronizador confere a existência da chave (`stat_object`) e grava (`put_object`) em duas chamadas, sem gravação condicional (`src/tcg/sync/sincronizador.py`, linhas 99 a 115) | Não tem correção nesta entrega. O grupo de concorrência do workflow (`coleta-dados-raw`, `cancel-in-progress: false`) já impede duas execuções simultâneas do Actions. Um `make sync` manual ao mesmo tempo que o Actions passaria pela mesma verificação, mas gravaria os mesmos bytes da branch `dados-raw`, porque os dois leem o mesmo blob e conferem o sha1 antes de enviar: o conteúdo no data lake não muda. Recomendação: não rodar `make sync` perto das 20h30 e das 06h30 UTC, os horários agendados. Até 12/12: nenhum estado da matriz muda; o RF-05 e o RNF-03 continuam `atendido`, porque a recusa de sobrescrita está testada e o pior caso regrava bytes idênticos. | auditoria_final.md L-08 (17/11) | RF-05, RNF-03 | documentação | autor | 12/12/2026 | aceita |
 | P-14 | Trocar "MinIO" por "data lake" nas mensagens de log do sincronizador e fixar o nome do logger (hoje aparece `__main__` quando o módulo roda com `-m`; usar `tcg.sync.sincronizador`) | Vira uma tarefa, com o teste que confere a mensagem de recusa de sobrescrita. Se não couber até 12/12: nenhum estado da matriz muda, porque o resultado da sincronização é o mesmo. | prompts.md T-18 e T-58 | RF-05 | cosmético | agente | 05/12/2026 | aberta |
 | P-15 | Renomear o passo do workflow "sincronizar com o data lake da turma", porque a palavra "turma" aparece mascarada como `***` nos logs | Vira uma tarefa: nome novo sem essa palavra, ajustando `tests/unidade/test_workflow.py` se ele localizar o passo pelo nome. Pode ir junto com a P-03. Se não couber até 12/12: nenhum estado da matriz muda, porque o efeito é só na leitura do log. | prompts.md T-58 | RNF-08 | cosmético | agente | 05/12/2026 | aberta |
+| P-17 | Os commits `10b6b13` (`chore (T-00)`, com espaço antes do parêntese) e `bed3e94` (`Initial commit`, criado pelo GitHub) estão fora da convenção `tipo(T-xx): descrição [RF-yy]` | Não tem correção: corrigir exigiria reescrever o histórico da `main` com `push --force`, proibido pelo `AGENTS.md`. Os dois commits são anteriores a qualquer código e a qualquer requisito. Até 12/12: nenhum estado da matriz muda, porque nenhum requisito depende da mensagem desses commits. | auditoria_final.md L-11 (17/11) | — | cosmético | autor | 12/12/2026 | aceita |
 
 ## Perguntas para a mentoria
 

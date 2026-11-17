@@ -1,0 +1,17 @@
+T-56 – Autoauditoria final (docs/auditoria_final.md) – verificação executada pelo agente em 2026-11-17T00:13Z, antes das alterações do segundo passo
+
+$ test -s docs/auditoria_final.md && git diff --stat -- . ':!docs/auditoria_final.md'; echo "código de saída: $?"
+código de saída: 0
+
+$ wc -l docs/auditoria_final.md
+94 docs/auditoria_final.md
+
+$ git status --short
+?? docs/auditoria_final.md
+
+# A segunda parte do comando (git diff --stat) não listou nenhum arquivo: a auditoria
+# só criou docs/auditoria_final.md, que ainda não está versionado.
+# Suíte rodada durante a auditoria: .venv/bin/python -m pytest -q -> 463 passed in 63.89s (0:01:03)
+# Depois desta verificação, no segundo passo pedido pelo autor, foram alterados
+# docs/pendencias_aula08.md (P-16 e P-17), specs/tasks.md (T-56 marcada),
+# docs/prompts.md (registro) e criado este arquivo. docs/auditoria_final.md não mudou.

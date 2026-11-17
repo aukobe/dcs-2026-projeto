@@ -72,6 +72,7 @@ Histórico dos prompts usados com agentes de IA em cada etapa do projeto e do re
 | 2026-11-16 | T-53 | texto completo em [Prompt da T-53 – Avaliação ATAM (2026-11-16)](#prompt-da-t-53--avaliação-atam-2026-11-16) | rascunho mostrado antes de gravar; aprovado com três ajustes do autor: 1) evidência nova `docs/evidencias/T-53_observacoes_painel.md` com as observações do autor no `make painel` de 16/11 (carteiras, composição, placar e linhas da gold por coleção), usada em S-01, C-13 e RS-03, que saíram das pendências; 2) RS-05 reescrito: o placar usa comparação estrita, e a selado da DRI aparece como "não" acima da cdi por empate; 3) evidência da verificação em `docs/evidencias/T-53_atam.txt`; `docs/atam.md` com 13 cenários em seis partes, cada RNF em ao menos um cenário; verificação: 42 linhas com "RNF-", nenhuma evidência citada faltando; T-53 marcada como [x] |
 | 2026-11-16 | T-54 | texto completo em [Prompt da T-54 – Matriz de rastreabilidade (2026-11-16)](#prompt-da-t-54--matriz-de-rastreabilidade-2026-11-16) | matriz com 41 linhas (40 atendidos, 1 parcial: RNF-13); revisão do autor: amostra de três linhas "atendido" com semente 54 (RF-09, RNF-01, RNF-08; 8 testes, 8 passed); colunas Decisão e Razão mantidas, com desvio registrado em relação ao formato literal do prompt 11.2; nome do teste corrigido em `docs/atam.md`; nota sobre `scripts/hipoteses_bruto.py`, `tests/unidade/test_hipoteses_bruto.py` e os `__init__.py`; T-54 marcada como [x]; evidência em `docs/evidencias/T-54_rastreabilidade.txt` |
 | 2026-11-17 | T-55 | texto completo em [Prompt da T-55 – Registro de pendências (2026-11-17)](#prompt-da-t-55--registro-de-pendências-2026-11-17) | rascunho mostrado antes de gravar; aprovado com ajustes do autor: evidência `docs/evidencias/T-55_pendencias.txt`; categoria `entrega` criada para P-02 e P-04, só a P-01 como `limitador`; P-03 passou a `funcional` (as ações já rodam forçadas no Node.js 24); "a ASC (24541)" na pergunta 3; regra de tarefa nova antes de qualquer código em "Como ler"; `docs/pendencias_aula08.md` com 15 pendências (1 limitador, 2 entrega, 7 funcional, 3 documentação, 2 cosmético) e 4 perguntas para a mentoria; verificação `test -s` com código 0 e conferência das colunas de cada linha sem falta |
+| 2026-11-17 | T-56 | texto completo em [Prompt da T-56 – Autoauditoria final (2026-11-17)](#prompt-da-t-56--autoauditoria-final-2026-11-17) | relatório aprovado pelo autor sem alterações; 13 itens cumpridos e 1 parcial (item 9, dois commits fora da convenção), nenhum limitador encontrado; duas lacunas novas viraram P-16 (L-08) e P-17 (L-11) em `docs/pendencias_aula08.md`, as duas `aceita`; verificação com código de saída 0 e nenhum outro arquivo no `git diff`; evidência em `docs/evidencias/T-56_auditoria.txt` |
 
 ## Prompt da etapa 0 – Esqueleto
 
@@ -1234,3 +1235,97 @@ Ajustes do autor antes de gravar:
 Os IDs P-xx do rascunho foram mantidos, porque o autor se refere a eles nos ajustes. Por isso a P-04 aparece antes da P-03 na tabela.
 
 Resultado: `test -s docs/pendencias_aula08.md` com código de saída 0. 15 linhas P-xx com descrição, encaminhamento e origem preenchidos e impacto, responsável, prazo e estado válidos, em ordem por impacto. 4 perguntas para a mentoria. Saída em `docs/evidencias/T-55_pendencias.txt`. T-55 marcada como [x]. Nenhuma pendência foi resolvida, nenhum código foi alterado e não houve acesso do agente ao `.env`, ao data lake, ao MinIO ou à rede, nem commit.
+
+## Prompt da T-56 – Autoauditoria final (2026-11-17)
+
+Prompt 11.1 do enunciado da Aula 08, seguido do complemento do autor para este projeto.
+
+```text
+[C] Personagem
+Você é um auditor técnico de projetos de engenharia de dados. Você
+compara o repositório com o enunciado e relata o que encontrou. Você não
+corrige nada.
+
+[R] Pedido
+Audite o repositório contra o enunciado do projeto final (pipeline de
+cartas Pokémon do TCGplayer) e escreva o relatório em
+docs/auditoria_final.md. Para cada item abaixo, diga cumprido, parcial
+ou ausente, com o arquivo e a linha que sustentam o julgamento.
+1. Artefatos SDD: AGENTS.md, docs/00_persona.md,
+   docs/01_objetivos_negocio.md, specs/spec.md (RF/RNF com
+   Dado/Quando/Então), specs/plan.md (C4 em Mermaid), specs/tasks.md,
+   docs/atam.md, docs/adr/, docs/rastreabilidade.md, docs/prompts.md.
+2. Coleta: job diário com User-Agent próprio, pausa entre chamadas e
+   repetição com espera crescente.
+3. Bruto: chave tcg/raw/tcgplayer/group_id=<id>/data=<AAAA-MM-DD>/;
+   o código confere a existência da chave e recusa a sobrescrita; há
+   teste que demonstra isso.
+4. Silver: colecao, produto e preco_diario com as colunas e os tipos do
+   contrato comum; modelo Pydantic por tabela; quarentena com motivo;
+   preço ausente gravado como nulo.
+5. Gold: fato_preco_diario e dimensões de produto, coleção, data e
+   acabamento, lidas sobre a silver de todas as coleções; ADR.
+6. Reprocessamento: um comando reconstrói silver e gold sem duplicar.
+7. Dashboard: as cinco perguntas, com imagem das cartas e link do
+   produto.
+8. Testes: unidade sem rede; VCR para o TCGCSV; Testcontainers para o
+   MinIO.
+9. Rastreabilidade: toda linha "atendido" tem evidência; commits citam
+   T-xx e RF/RNF (git log --oneline).
+10. Ordem SDD: spec.md e tasks.md têm commits anteriores aos commits de
+    código que implementam seus itens (git log --follow).
+11. Segredos: procure no histórico (git log -p) senhas, chaves do MinIO,
+    URLs com usuário e senha e arquivos .env versionados.
+12. Lacunas da série: dias sem coleta declarados no README.
+13. Câmbio: PTAX e CDI no bruto; conversão pela PTAX de fechamento do
+    dia ou do último dia útil anterior, nunca posterior; teste com fim
+    de semana e feriado.
+14. Desafio: cinco carteiras com unidades inteiras, PTAX de compra e de
+    venda, taxa de venda parametrizada, composição escolhida só com
+    dados do primeiro dia; resultado no contrato de gold_turma.
+
+[E] Exemplos
+| # | Item | Estado | Evidência | Lacuna |
+|---|------|--------|-----------|--------|
+| 3 | Bruto | parcial | src/coleta/gravador_raw.py:41 usa put_object sem stat_object | falta verificação de existência e teste de recusa |
+| 4 | Silver | parcial | src/silver/preco.py:22 grava market_price como VARCHAR | quebra o contrato comum |
+
+[A] Ajustes
+- Não edite nenhum arquivo além de docs/auditoria_final.md.
+- Não rode git commit, git push nem comandos que gravem no MinIO.
+- Não marque "cumprido" sem citar arquivo e linha ou saída de comando.
+- Se encontrar um segredo, não o copie: informe só o arquivo, o commit
+  e o tipo de credencial.
+- Separe fato, lacuna e suposição.
+
+[T] Tipo de saída
+docs/auditoria_final.md com a tabela dos 14 itens no formato do
+exemplo; as lacunas ordenadas pelo impacto, primeiro as que acionam
+limitador (pipeline que não roda, segredo versionado, silver fora do
+contrato, dado inventado, código sem especificação prévia); e uma seção
+"Suposições".
+
+[E] Extras
+Fontes de verdade: os arquivos do repositório, o histórico do git e a
+leitura (somente leitura) da própria partição no MinIO. Pode rodar
+pytest e DESCRIBE no DuckDB sobre a silver. Se não conseguir rodar algum
+comando, diga qual e por quê. Pare ao final.
+
+Complemento do projeto (T-56 de specs/tasks.md):
+- O AGENTS.md proíbe o agente de acessar o data lake da turma (RustFS) e de ler o .env; ele prevalece sobre a leitura da partição citada acima. Use as evidências em docs/evidencias/ (por exemplo T-50_clone_limpo.md e T-53_observacoes_painel.md) e os testes com MinIO descartável no lugar do DESCRIBE sobre a silver real, e diga na seção "Suposições" que esse comando não foi rodado e por quê.
+- Rode os testes com .venv/bin/python -m pytest, nunca com o pytest do PATH.
+- Use também docs/pendencias_aula08.md: lacuna já registrada lá deve citar o número P-xx.
+- Ao final, rode a verificação da T-56: test -s docs/auditoria_final.md && git diff --stat -- . ':!docs/auditoria_final.md' (a segunda parte não pode listar nenhum arquivo) e mostre a saída real.
+- Não marque a T-56 em specs/tasks.md nem altere docs/prompts.md: isso será feito num segundo passo, depois da minha revisão.
+```
+
+Resultado da auditoria: `docs/auditoria_final.md` com a tabela dos 14 itens, as lacunas por impacto, os fatos de verificação, as suposições e os comandos não executados. 13 itens cumpridos e 1 parcial: o item 9, por causa de dois commits fora da convenção (`10b6b13`, com espaço em `chore (T-00)`, e `bed3e94`, `Initial commit`). Nenhum limitador encontrado. Suíte com `.venv/bin/python -m pytest -q`: 463 passed. Scripts sobre o histórico conferiram que as referências da matriz existem, que nenhum commit de código vem antes da sua tarefa ou dos seus requisitos e que o único valor no padrão de credencial do histórico é o texto fictício "ficticio" em `docs/evidencias/T-15_compose.txt` (commit `7f693b5`). Duas lacunas eram novas: L-08 (verificação e gravação em duas chamadas no sincronizador) e L-11 (commits fora da convenção). As demais citam P-xx. Não foram rodados, por regra do `AGENTS.md`: o DESCRIBE sobre a silver real e qualquer leitura do data lake (substituídos pelos testes com MinIO descartável e pelas evidências T-50 e T-58), `git fetch`, `make cobertura`, `gh run list` e `make reprocessar`. Verificação: `test -s docs/auditoria_final.md && git diff --stat -- . ':!docs/auditoria_final.md'` com código de saída 0 e nenhum arquivo listado.
+
+Revisão do autor: relatório aprovado sem alterações. Segundo passo pedido pelo autor:
+1. P-16 (L-08) em `docs/pendencias_aula08.md`: impacto documentação, estado `aceita`. O grupo de concorrência do workflow cobre as execuções do Actions; um `make sync` manual simultâneo gravaria os mesmos bytes da branch; recomendação de não rodar `make sync` perto das 20h30 e das 06h30 UTC.
+2. P-17 (L-11): impacto cosmético, estado `aceita`. Corrigir exigiria reescrever o histórico com `push --force`, proibido pelo `AGENTS.md`.
+3. Contagem do registro atualizada: 17 pendências, 14 abertas e 3 aceitas.
+4. Saída da verificação em `docs/evidencias/T-56_auditoria.txt`, executada de novo antes das alterações do segundo passo, com o mesmo resultado.
+5. T-56 marcada como [x] em `specs/tasks.md` e este registro.
+
+`docs/auditoria_final.md` não foi alterado no segundo passo. Não houve acesso do agente ao `.env`, ao data lake, ao MinIO local ou à rede, nem commit.
